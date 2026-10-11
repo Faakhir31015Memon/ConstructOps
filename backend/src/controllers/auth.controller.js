@@ -1,10 +1,11 @@
+import getSecret from '../config/jwt.js';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
 import Company from '../models/company.model.js';
 
 // Helper to generate JWT token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'constructops_super_secure_jwt_secret_key_2026_dev', {
+  return jwt.sign({ id }, getSecret(), {
     expiresIn: '30d',
   });
 };
@@ -144,7 +145,7 @@ export const adminLogin = (req, res) => {
   if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
     const token = jwt.sign(
       { role: 'admin', email },
-      process.env.JWT_SECRET || 'constructops_super_secure_jwt_secret_key_2026_dev',
+      getSecret(),
       { expiresIn: '1d' }
     );
 

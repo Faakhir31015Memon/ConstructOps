@@ -1,3 +1,4 @@
+import getSecret from '../config/jwt.js';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
 
@@ -13,7 +14,7 @@ export const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
 
       // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'constructops_super_secure_jwt_secret_key_2026_dev');
+      const decoded = jwt.verify(token, getSecret());
 
       // Check if it's the admin role
       if (decoded.role === 'admin') {
@@ -55,7 +56,7 @@ export const verifyAdmin = (req, res, next) => {
   ) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'constructops_super_secure_jwt_secret_key_2026_dev');
+      const decoded = jwt.verify(token, getSecret());
 
       if (decoded.role !== 'admin') {
         return res.status(403).json({ success: false, message: 'Access denied: Admin role required' });
