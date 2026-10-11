@@ -4,8 +4,8 @@ import Company from '../models/company.model.js';
 
 // Helper to generate JWT token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'constructops_super_secure_jwt_secret_key_2026_dev', {
-    expiresIn: '30d',
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: '1h',
   });
 };
 
@@ -16,8 +16,15 @@ export const registerUser = async (req, res) => {
   const { name, email, password, companyName } = req.body;
 
   try {
+    // Basic validation – all fields required
     if (!name || !email || !password || !companyName) {
-      return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+      return res.status(400).json({ success: false, message: 'All fields (name, email, password, companyName) are required' });
+    }
+
+    // Enforce password policy: minimum 8 characters, at least one letter and one number
+    const passwordPolicy = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    if (!passwordPolicy.test(password)) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters long and include letters and numbers' });
     }
 
     const userExists = await User.findOne({ email });
