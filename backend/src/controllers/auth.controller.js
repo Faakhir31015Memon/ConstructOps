@@ -5,13 +5,8 @@ import Company from '../models/company.model.js';
 
 // Helper to generate JWT token
 const generateToken = (id) => {
-<<<<<<< HEAD
   return jwt.sign({ id }, getSecret(), {
-    expiresIn: '30d',
-=======
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: '1h',
->>>>>>> d1d5f7a421e686af2bb92e3cab0ba1fe567f7dad
   });
 };
 
