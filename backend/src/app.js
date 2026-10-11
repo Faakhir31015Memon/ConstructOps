@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import connectDB from './config/db.js';
 
 // Import Route Handlers
 import authRoutes from './routes/auth.routes.js';
@@ -34,6 +35,17 @@ app.get('/api/v1/health', (req, res) => {
     message: 'ConstructOps API is online',
     timestamp: new Date(),
   });
+});
+
+// A serverless invocation is fresh per cold start, so the connection opens on the
+// first request that needs it rather than at module load.
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Bind API Routes

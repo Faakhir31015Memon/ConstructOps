@@ -1,8 +1,12 @@
 import axios from 'axios';
 
-// Base URL points to Vite proxy (which goes to http://localhost:5000) or absolute backend URL
+// Same-origin on Vercel (/api/v1) unless VITE_API_BASE_URL points to a separate backend
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')}/api/v1`
+  : '/api/v1';
+
 const API = axios.create({
-  baseURL: '/api/v1',
+  baseURL: BASE_URL,
 });
 
 // Interceptor to inject Token into Authorization headers
