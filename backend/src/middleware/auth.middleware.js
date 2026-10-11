@@ -2,9 +2,11 @@ import getSecret from '../config/jwt.js';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
 
-// Ensure JWT secret is defined; abort if missing
-if (!process.env.JWT_SECRET) {
-  console.error('❌ JWT_SECRET environment variable is not set. Exiting.');
+// Ensure JWT secret is accessible
+try {
+  getSecret();
+} catch (err) {
+  console.error('❌ ' + err.message);
   process.exit(1);
 }
 
