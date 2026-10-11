@@ -1,6 +1,7 @@
 import Material from '../models/material.model.js';
 import MaterialLog from '../models/materialLog.model.js';
 import Alert from '../models/alert.model.js';
+import Project from '../models/project.model.js';
 
 // @desc    Add material definition to project
 // @route   POST /api/v1/materials
@@ -11,6 +12,15 @@ export const addMaterial = async (req, res) => {
   try {
     if (!projectId || !name || !unit) {
       return res.status(400).json({ success: false, message: 'Please provide projectId, name and unit' });
+    }
+
+    // Verify project belongs to user's company
+    const project = await Project.findOne({
+      _id: projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
     }
 
     // Check if material already exists
@@ -45,6 +55,15 @@ export const getMaterials = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please specify projectId parameter' });
     }
 
+    // Verify project belongs to user's company
+    const project = await Project.findOne({
+      _id: projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
+    }
+
     const materials = await Material.find({ projectId });
     res.json({ success: true, materials });
   } catch (error) {
@@ -63,9 +82,18 @@ export const logMaterialTransaction = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide all transaction details' });
     }
 
-    const material = await Material.findById(materialId);
+    // Verify project belongs to user's company
+    const project = await Project.findOne({
+      _id: projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
+    }
+
+    const material = await Material.findOne({ _id: materialId, projectId });
     if (!material) {
-      return res.status(404).json({ success: false, message: 'Material not found' });
+      return res.status(404).json({ success: false, message: 'Material not found in this project' });
     }
 
     // Create Audit Log entry
@@ -114,6 +142,15 @@ export const getMaterialLogs = async (req, res) => {
   try {
     if (!projectId) {
       return res.status(400).json({ success: false, message: 'Please specify projectId parameter' });
+    }
+
+    // Verify project belongs to user's company
+    const project = await Project.findOne({
+      _id: projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
     }
 
     const logs = await MaterialLog.find({ projectId })

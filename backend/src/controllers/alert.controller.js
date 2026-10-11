@@ -10,6 +10,15 @@ export const getAlerts = async (req, res) => {
   try {
     let query = {};
     if (projectId) {
+      // Verify project belongs to user's company
+      const project = await Project.findOne({
+        _id: projectId,
+        ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+      });
+      if (!project) {
+        return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
+      }
+
       query.projectId = projectId;
     } else {
       // Global notification check
@@ -41,6 +50,15 @@ export const markAlertRead = async (req, res) => {
 
     if (!alert) {
       return res.status(404).json({ success: false, message: 'Alert not found' });
+    }
+
+    // Verify alert project belongs to user's company
+    const project = await Project.findOne({
+      _id: alert.projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(403).json({ success: false, message: 'Unauthorized access to this alert' });
     }
 
     alert.isRead = true;

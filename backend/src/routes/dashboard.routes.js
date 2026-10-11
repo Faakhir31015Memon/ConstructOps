@@ -69,14 +69,21 @@ router.get('/', protect, async (req, res) => {
     }
 
     // Chart 3: Worker Attendance
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todayAttendance = await Attendance.find({ date: todayStr });
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const attendanceFilter = {
+      date: today,
+      ...(req.user.role !== 'admin' && { projectId: { $in: projectIds } }),
+    };
+
+    const todayAttendance = await Attendance.find(attendanceFilter);
     const presentCount = todayAttendance.filter(a => a.status === 'present').length;
     const absentCount = todayAttendance.filter(a => a.status === 'absent').length;
 
     const workerData = [
-      { name: 'Present', value: presentCount || 1 },
-      { name: 'Absent', value: absentCount || 0 }
+      { name: 'Present', value: presentCount },
+      { name: 'Absent', value: absentCount }
     ];
 
     // Detailed Audit data requested by the User:

@@ -1,5 +1,6 @@
 import Worker from '../models/worker.model.js';
 import Attendance from '../models/attendance.model.js';
+import Project from '../models/project.model.js';
 
 // @desc    Add a worker to project
 // @route   POST /api/v1/workers
@@ -10,6 +11,15 @@ export const addWorker = async (req, res) => {
   try {
     if (!projectId || !name || !role || !dailyWage || !phone) {
       return res.status(400).json({ success: false, message: 'Please provide all worker details' });
+    }
+
+    // Verify project belongs to user's company
+    const project = await Project.findOne({
+      _id: projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
     }
 
     const worker = await Worker.create({
@@ -37,6 +47,15 @@ export const getWorkers = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please specify projectId parameter' });
     }
 
+    // Verify project belongs to user's company
+    const project = await Project.findOne({
+      _id: projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
+    }
+
     const workers = await Worker.find({ projectId });
     res.json({ success: true, workers });
   } catch (error) {
@@ -49,16 +68,26 @@ export const getWorkers = async (req, res) => {
 // @access  Private (Owner, Manager)
 export const updateWorker = async (req, res) => {
   try {
-    const worker = await Worker.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-
+    const worker = await Worker.findById(req.params.id);
     if (!worker) {
       return res.status(404).json({ success: false, message: 'Worker not found' });
     }
 
-    res.json({ success: true, worker });
+    // Verify project belongs to user's company
+    const project = await Project.findOne({
+      _id: worker.projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(403).json({ success: false, message: 'Unauthorized access to this worker' });
+    }
+
+    const updatedWorker = await Worker.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.json({ success: true, worker: updatedWorker });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }
@@ -73,6 +102,15 @@ export const deleteWorker = async (req, res) => {
 
     if (!worker) {
       return res.status(404).json({ success: false, message: 'Worker not found' });
+    }
+
+    // Verify project belongs to user's company
+    const project = await Project.findOne({
+      _id: worker.projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(403).json({ success: false, message: 'Unauthorized access to this worker' });
     }
 
     // Clean up attendance records for this worker
@@ -94,6 +132,15 @@ export const checkInAttendance = async (req, res) => {
   try {
     if (!workerId || !projectId || !date || !status) {
       return res.status(400).json({ success: false, message: 'Please provide workerId, projectId, date, and status' });
+    }
+
+    // Verify project belongs to user's company
+    const project = await Project.findOne({
+      _id: projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
     }
 
     // Parse date to start of day to avoid time differences in indexing
@@ -130,6 +177,15 @@ export const getAttendance = async (req, res) => {
   try {
     if (!projectId || !date) {
       return res.status(400).json({ success: false, message: 'Please specify projectId and date parameters' });
+    }
+
+    // Verify project belongs to user's company
+    const project = await Project.findOne({
+      _id: projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
     }
 
     const attendanceDate = new Date(date);

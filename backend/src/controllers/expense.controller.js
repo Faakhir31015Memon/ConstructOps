@@ -13,9 +13,12 @@ export const addExpense = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide all expense details' });
     }
 
-    const project = await Project.findById(projectId);
+    const project = await Project.findOne({
+      _id: projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
     if (!project) {
-      return res.status(404).json({ success: false, message: 'Project not found' });
+      return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
     }
 
     // Create Expense
@@ -87,6 +90,15 @@ export const getExpenses = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please specify projectId parameter' });
     }
 
+    // Verify project belongs to user's company
+    const project = await Project.findOne({
+      _id: projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
+    }
+
     const query = { projectId };
     if (category) {
       query.category = category;
@@ -110,6 +122,15 @@ export const updateExpense = async (req, res) => {
     let expense = await Expense.findById(req.params.id);
     if (!expense) {
       return res.status(404).json({ success: false, message: 'Expense not found' });
+    }
+
+    // Verify parent project belongs to user's company
+    const project = await Project.findOne({
+      _id: expense.projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(403).json({ success: false, message: 'Unauthorized access to this project expense' });
     }
 
     expense = await Expense.findByIdAndUpdate(req.params.id, req.body, {
@@ -137,6 +158,15 @@ export const deleteExpense = async (req, res) => {
     const expense = await Expense.findById(req.params.id);
     if (!expense) {
       return res.status(404).json({ success: false, message: 'Expense not found' });
+    }
+
+    // Verify parent project belongs to user's company
+    const project = await Project.findOne({
+      _id: expense.projectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(403).json({ success: false, message: 'Unauthorized access to this project expense' });
     }
 
     const projectId = expense.projectId;
