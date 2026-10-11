@@ -20,11 +20,7 @@ export const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
 
       // Verify token
-<<<<<<< HEAD
       const decoded = jwt.verify(token, getSecret());
-=======
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
->>>>>>> d1d5f7a421e686af2bb92e3cab0ba1fe567f7dad
 
       // Check if it's the admin role
       if (decoded.role === 'admin') {
@@ -66,11 +62,7 @@ export const verifyAdmin = (req, res, next) => {
   ) {
     try {
       token = req.headers.authorization.split(' ')[1];
-<<<<<<< HEAD
       const decoded = jwt.verify(token, getSecret());
-=======
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
->>>>>>> d1d5f7a421e686af2bb92e3cab0ba1fe567f7dad
 
       if (decoded.role !== 'admin') {
         return res.status(403).json({ success: false, message: 'Access denied: Admin role required' });
