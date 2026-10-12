@@ -553,7 +553,7 @@ function renderCompany(doc, report, data) {
   );
 }
 
-export async function buildProjectPdf(data) {
+export async function buildExportPdf(data) {
   const notes = {};
   const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: MARGIN, bufferPages: true });
   doc.info = {
