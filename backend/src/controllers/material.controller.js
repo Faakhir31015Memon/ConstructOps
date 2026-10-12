@@ -2,6 +2,7 @@ import Material from '../models/material.model.js';
 import MaterialLog from '../models/materialLog.model.js';
 import Alert from '../models/alert.model.js';
 import Project from '../models/project.model.js';
+import ProjectAssignment from '../models/projectAssignment.model.js';
 
 // @desc    Add material definition to project
 // @route   POST /api/v1/materials
@@ -64,6 +65,17 @@ export const getMaterials = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
     }
 
+    if (req.user.role === 'contractor') {
+      const assignment = await ProjectAssignment.findOne({
+        projectId,
+        contractorId: req.user._id,
+        status: 'active',
+      });
+      if (!assignment) {
+        return res.status(403).json({ success: false, message: 'Access denied: You are not assigned to this project' });
+      }
+    }
+
     const materials = await Material.find({ projectId });
     res.json({ success: true, materials });
   } catch (error) {
@@ -89,6 +101,17 @@ export const logMaterialTransaction = async (req, res) => {
     });
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
+    }
+
+    if (req.user.role === 'contractor') {
+      const assignment = await ProjectAssignment.findOne({
+        projectId,
+        contractorId: req.user._id,
+        status: 'active',
+      });
+      if (!assignment) {
+        return res.status(403).json({ success: false, message: 'Access denied: You are not assigned to this project' });
+      }
     }
 
     const material = await Material.findOne({ _id: materialId, projectId });
@@ -151,6 +174,17 @@ export const getMaterialLogs = async (req, res) => {
     });
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
+    }
+
+    if (req.user.role === 'contractor') {
+      const assignment = await ProjectAssignment.findOne({
+        projectId,
+        contractorId: req.user._id,
+        status: 'active',
+      });
+      if (!assignment) {
+        return res.status(403).json({ success: false, message: 'Access denied: You are not assigned to this project' });
+      }
     }
 
     const logs = await MaterialLog.find({ projectId })

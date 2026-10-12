@@ -198,4 +198,51 @@ export const deleteUser = async (id) => {
   return data;
 };
 
+// --- CONTRACTOR & MULTI-TENANT MANAGEMENT API METHODS ---
+export const getContractors = async () => {
+  const { data } = await API.get('/contractors');
+  return data;
+};
+
+export const createContractor = async (contractorData) => {
+  const { data } = await API.post('/contractors', contractorData);
+  return data;
+};
+
+export const assignContractor = async (projectId, contractorId) => {
+  const { data } = await API.post('/contractors/assign', { projectId, contractorId });
+  return data;
+};
+
+export const revokeContractor = async (projectId, contractorId) => {
+  const { data } = await API.post('/contractors/revoke', { projectId, contractorId });
+  return data;
+};
+
+export const reviewExpense = async (expenseId, status, rejectionReason = '') => {
+  const { data } = await API.put(`/expenses/${expenseId}/review`, { status, rejectionReason });
+  return data;
+};
+
+export const getProjectContract = async (projectId) => {
+  const { data } = await API.get(`/contractors/contracts/${projectId}`);
+  return data;
+};
+
+export const saveProjectContract = async (contractData) => {
+  const { data } = await API.post('/contractors/contracts', contractData);
+  return data;
+};
+
+export const getProjectPayments = async (projectId) => {
+  const { data } = await API.get(`/contractors/payments/${projectId}`);
+  return data;
+};
+
+export const recordProjectPayment = async (paymentData) => {
+  const { data } = await API.post('/contractors/payments', paymentData);
+  return data;
+};
+
 export default API;
+

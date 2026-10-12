@@ -15,7 +15,7 @@ const HomeRedirect = () => {
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-  if (user && user.role === 'admin') {
+  if (user && (user.role === 'admin' || user.role === 'owner' || user.role === 'manager')) {
     return <Navigate to="/dashboard" replace />;
   }
   return <Navigate to="/projects" replace />;

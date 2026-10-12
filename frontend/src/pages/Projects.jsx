@@ -87,10 +87,16 @@ const Projects = () => {
       {/* Page Header */}
       <div style={styles.header}>
         <div>
-          <h1 style={styles.title}>All Construction Projects</h1>
-          <p style={styles.subtitle}>Manage active locations, budgets, and track progress.</p>
+          <h1 style={styles.title}>
+            {user?.role === 'contractor' ? 'My Assigned Construction Sites' : 'All Construction Projects'}
+          </h1>
+          <p style={styles.subtitle}>
+            {user?.role === 'contractor' 
+              ? 'Access site modules and submit daily records for assigned projects.' 
+              : 'Manage active locations, budgets, and track progress.'}
+          </p>
         </div>
-        {user && user.role !== 'accountant' && (
+        {user && ['owner', 'manager', 'admin'].includes(user.role) && (
           <button onClick={() => setShowModal(true)} className="btn btn-primary">
             <Plus size={18} />
             <span>New Project</span>
@@ -102,9 +108,13 @@ const Projects = () => {
         <div style={styles.loading}>Loading projects...</div>
       ) : projects.length === 0 ? (
         <div style={styles.emptyState}>
-          <h3>No projects registered</h3>
-          <p>Get started by creating your first construction project site.</p>
-          {user && user.role !== 'accountant' && (
+          <h3>{user?.role === 'contractor' ? 'No Projects Assigned' : 'No projects registered'}</h3>
+          <p>
+            {user?.role === 'contractor' 
+              ? 'You do not have any active project assignments yet. Contact your Company Owner.' 
+              : 'Get started by creating your first construction project site.'}
+          </p>
+          {user && ['owner', 'manager', 'admin'].includes(user.role) && (
             <button onClick={() => setShowModal(true)} className="btn btn-primary" style={{ marginTop: '1rem' }}>
               <Plus size={18} />
               <span>Create Project</span>

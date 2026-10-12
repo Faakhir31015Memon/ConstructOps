@@ -1,10 +1,11 @@
 import DailyReport from '../models/dailyReport.model.js';
 import Project from '../models/project.model.js';
 import Alert from '../models/alert.model.js';
+import ProjectAssignment from '../models/projectAssignment.model.js';
 
 // @desc    Add daily report log (and run simulated AI evaluation)
 // @route   POST /api/v1/reports
-// @access  Private (Site Manager, Owner)
+// @access  Private (Site Manager, Owner, Contractor)
 export const createReport = async (req, res) => {
   const { projectId, description, workType, images } = req.body;
 
@@ -19,6 +20,17 @@ export const createReport = async (req, res) => {
     });
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
+    }
+
+    if (req.user.role === 'contractor') {
+      const assignment = await ProjectAssignment.findOne({
+        projectId,
+        contractorId: req.user._id,
+        status: 'active',
+      });
+      if (!assignment) {
+        return res.status(403).json({ success: false, message: 'Access denied: You are not assigned to this project' });
+      }
     }
 
     // AI Site Photo Analysis Simulation Rule Engine
@@ -110,6 +122,17 @@ export const getReports = async (req, res) => {
     });
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
+    }
+
+    if (req.user.role === 'contractor') {
+      const assignment = await ProjectAssignment.findOne({
+        projectId,
+        contractorId: req.user._id,
+        status: 'active',
+      });
+      if (!assignment) {
+        return res.status(403).json({ success: false, message: 'Access denied: You are not assigned to this project' });
+      }
     }
 
     const reports = await DailyReport.find({ projectId })

@@ -71,6 +71,20 @@ const Sidebar = () => {
           </NavLink>
         )}
 
+        {/* Company Owner & Moderator Dashboard */}
+        {user && (user.role === 'owner' || user.role === 'manager') && (
+          <NavLink 
+            to="/dashboard" 
+            style={({ isActive }) => ({
+              ...styles.menuItem,
+              ...(isActive ? styles.activeMenuItem : {})
+            })}
+          >
+            <LayoutDashboard size={20} />
+            <span>Company Dashboard</span>
+          </NavLink>
+        )}
+
         <NavLink 
           to="/projects" 
           style={({ isActive }) => ({
@@ -79,7 +93,7 @@ const Sidebar = () => {
           })}
         >
           <Briefcase size={20} />
-          <span>Projects</span>
+          <span>{user?.role === 'contractor' ? 'My Assigned Projects' : 'Projects'}</span>
         </NavLink>
       </div>
 

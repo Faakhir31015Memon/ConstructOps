@@ -16,7 +16,15 @@ import {
   createReport, 
   getAlerts, 
   markAlertRead,
-  updateProject
+  updateProject,
+  reviewExpense,
+  getContractors,
+  assignContractor,
+  revokeContractor,
+  getProjectContract,
+  saveProjectContract,
+  getProjectPayments,
+  recordProjectPayment
 } from '../services/api';
 import { 
   Briefcase, 
@@ -65,6 +73,19 @@ const ProjectDetail = () => {
   const [materialLogs, setMaterialLogs] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [reports, setReports] = useState([]);
+  
+  // Multi-Tenant Contractor, Contract & Payment States
+  const [projectContract, setProjectContract] = useState(null);
+  const [projectPayments, setProjectPayments] = useState([]);
+  const [companyContractors, setCompanyContractors] = useState([]);
+  const [selectedContractorToAssign, setSelectedContractorToAssign] = useState('');
+  const [contractAmountInput, setContractAmountInput] = useState('');
+  const [contractTermsInput, setContractTermsInput] = useState('');
+  const [paymentAmountInput, setPaymentAmountInput] = useState('');
+  const [paymentContractorInput, setPaymentContractorInput] = useState('');
+  const [paymentMethodInput, setPaymentMethodInput] = useState('bank_transfer');
+  const [paymentRefInput, setPaymentRefInput] = useState('');
+  const [actionMessage, setActionMessage] = useState('');
   
   // Form input States
   // 1. Worker Form
@@ -143,6 +164,14 @@ const ProjectDetail = () => {
       } else if (tab === 'reports') {
         const repRes = await getReports(id);
         if (repRes.success) setReports(repRes.reports);
+      } else if (tab === 'contracts') {
+        const contractRes = await getProjectContract(id);
+        if (contractRes.success) setProjectContract(contractRes.contract);
+        const paymentsRes = await getProjectPayments(id);
+        if (paymentsRes.success) setProjectPayments(paymentsRes.payments);
+      } else if (tab === 'contractors') {
+        const contRes = await getContractors();
+        if (contRes.success) setCompanyContractors(contRes.contractors);
       }
     } catch (err) {
       console.error('Error fetching tab details:', err);
@@ -237,6 +266,94 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleReviewExpense = async (expenseId, status) => {
+    try {
+      const res = await reviewExpense(expenseId, status);
+      if (res.success) {
+        setActionMessage(`Expense ${status} successfully`);
+        handleTabChange('expenses');
+        fetchDashboard();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error reviewing expense');
+    }
+  };
+
+  const handleAssignContractor = async (e) => {
+    e.preventDefault();
+    if (!selectedContractorToAssign) return;
+    try {
+      const res = await assignContractor(id, selectedContractorToAssign);
+      if (res.success) {
+        setActionMessage('Contractor assigned to project successfully');
+        setSelectedContractorToAssign('');
+        fetchDashboard();
+        handleTabChange('contractors');
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error assigning contractor');
+    }
+  };
+
+  const handleRevokeContractor = async (contractorId) => {
+    if (!window.confirm('Are you sure you want to revoke this contractor access from this project?')) return;
+    try {
+      const res = await revokeContractor(id, contractorId);
+      if (res.success) {
+        setActionMessage('Contractor access revoked');
+        fetchDashboard();
+        handleTabChange('contractors');
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error revoking contractor');
+    }
+  };
+
+  const handleSaveContract = async (e) => {
+    e.preventDefault();
+    try {
+      const contractorIdToBind = dashboardData.assignedContractors?.[0]?._id;
+      if (!contractorIdToBind) {
+        alert('Please assign a contractor to this project before creating a contract.');
+        return;
+      }
+      const res = await saveProjectContract({
+        projectId: id,
+        contractorId: contractorIdToBind,
+        contractAmount: Number(contractAmountInput),
+        terms: contractTermsInput,
+      });
+      if (res.success) {
+        setActionMessage('Contract terms saved successfully');
+        handleTabChange('contracts');
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error saving contract');
+    }
+  };
+
+  const handleRecordPayment = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await recordProjectPayment({
+        projectId: id,
+        contractorId: paymentContractorInput || dashboardData.assignedContractors?.[0]?._id,
+        amount: Number(paymentAmountInput),
+        paymentMethod: paymentMethodInput,
+        referenceNumber: paymentRefInput,
+      });
+      if (res.success) {
+        setActionMessage('Payment recorded successfully');
+        setPaymentAmountInput('');
+        setPaymentRefInput('');
+        handleTabChange('contracts');
+        fetchDashboard();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error recording payment');
+    }
+  };
+
   const handleAddExpenseSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -249,6 +366,7 @@ const ProjectDetail = () => {
       if (res.success) {
         setShowExpenseModal(false);
         setEAmount(''); setEDesc('');
+        setActionMessage(res.message || 'Expense submitted');
         handleTabChange('expenses');
         fetchDashboard();
       }
@@ -409,8 +527,22 @@ const ProjectDetail = () => {
           onClick={() => handleTabChange('expenses')} 
           style={{...styles.tabButton, ...(activeTab === 'expenses' ? styles.activeTabButton : {})}}
         >
-          Expenses Ledger
+          Expenses Ledger {dashboardData?.pendingCount > 0 && `(${dashboardData.pendingCount} pending)`}
         </button>
+        <button 
+          onClick={() => handleTabChange('contracts')} 
+          style={{...styles.tabButton, ...(activeTab === 'contracts' ? styles.activeTabButton : {})}}
+        >
+          Contracts & Payments
+        </button>
+        {(isOwner || isManager || user?.role === 'admin') && (
+          <button 
+            onClick={() => handleTabChange('contractors')} 
+            style={{...styles.tabButton, ...(activeTab === 'contractors' ? styles.activeTabButton : {})}}
+          >
+            Contractor Assignments
+          </button>
+        )}
       </div>
 
       {tabError && (
@@ -810,14 +942,25 @@ const ProjectDetail = () => {
       {activeTab === 'expenses' && (
         <div style={styles.tabContent}>
           <div style={styles.tabActions}>
-            <h3>Project Bills & Expenses</h3>
-            {user && !isManager && (
-              <button onClick={() => setShowExpenseModal(true)} className="btn btn-primary">
-                <Plus size={18} />
-                <span>Log Expense Item</span>
-              </button>
-            )}
+            <div>
+              <h3>Project Bills & Expenses</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                {user?.role === 'contractor'
+                  ? 'Submit expenses with receipts for owner approval. Pending items do not affect approved spent budget.'
+                  : 'Review contractor-submitted expenses. Only approved expenses count toward actual spent budget.'}
+              </p>
+            </div>
+            <button onClick={() => setShowExpenseModal(true)} className="btn btn-primary">
+              <Plus size={18} />
+              <span>{user?.role === 'contractor' ? 'Submit Expense for Approval' : 'Record Expense'}</span>
+            </button>
           </div>
+
+          {actionMessage && (
+            <div style={{ backgroundColor: 'rgba(39, 174, 96, 0.1)', color: 'var(--success-green)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginTop: '1rem', fontWeight: '500' }}>
+              {actionMessage}
+            </div>
+          )}
 
           <div style={{ marginTop: '1.5rem' }}>
             <div className="table-container">
@@ -829,12 +972,14 @@ const ProjectDetail = () => {
                     <th>Amount (Rs)</th>
                     <th>Description</th>
                     <th>Entered By</th>
+                    <th>Status</th>
+                    {(isOwner || isManager || user?.role === 'admin') && <th>Action</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {expenses.length === 0 ? (
                     <tr>
-                      <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No expenses recorded.</td>
+                      <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No expenses recorded.</td>
                     </tr>
                   ) : (
                     expenses.map((exp) => (
@@ -844,13 +989,295 @@ const ProjectDetail = () => {
                           <span className={`badge badge-info`}>{exp.category}</span>
                         </td>
                         <td><strong>{exp.amount.toLocaleString()}</strong></td>
-                        <td>{exp.description}</td>
-                        <td>{exp.addedBy?.name}</td>
+                        <td>
+                          <div>{exp.description}</div>
+                          {exp.rejectionReason && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--alert-red)' }}>Reason: {exp.rejectionReason}</div>
+                          )}
+                        </td>
+                        <td>
+                          <div>{exp.addedBy?.name}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{exp.addedBy?.role}</div>
+                        </td>
+                        <td>
+                          <span className={`badge ${
+                            exp.status === 'approved' ? 'badge-success' :
+                            exp.status === 'rejected' ? 'badge-danger' : 'badge-warning'
+                          }`}>
+                            {exp.status || 'approved'}
+                          </span>
+                        </td>
+                        {(isOwner || isManager || user?.role === 'admin') && (
+                          <td>
+                            {exp.status === 'pending' ? (
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  onClick={() => handleReviewExpense(exp._id, 'approved')}
+                                  className="btn btn-outline"
+                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderColor: 'var(--success-green)', color: 'var(--success-green)' }}
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleReviewExpense(exp._id, 'rejected')}
+                                  className="btn btn-outline"
+                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderColor: 'var(--alert-red)', color: 'var(--alert-red)' }}
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            ) : (
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                {exp.reviewedBy ? `Reviewed by ${exp.reviewedBy.name}` : 'Settled'}
+                              </span>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. CONTRACTS & PAYMENTS TAB */}
+      {activeTab === 'contracts' && (
+        <div style={styles.tabContent}>
+          <div style={styles.tabActions}>
+            <div>
+              <h3>Contract & Payment Milestones</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Contract agreements, payment releases, and disbursed amounts.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-2" style={{ marginTop: '1.5rem', gap: '2rem' }}>
+            {/* Contract Terms Box */}
+            <div className="card">
+              <h4>Contract Agreement</h4>
+              {projectContract ? (
+                <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Contractor:</span>
+                    <strong>{projectContract.contractorId?.name || 'Assigned Contractor'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Total Contract Amount:</span>
+                    <strong>Rs {projectContract.contractAmount.toLocaleString()}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Contract Status:</span>
+                    <span className="badge badge-success">{projectContract.status}</span>
+                  </div>
+                  {projectContract.terms && (
+                    <div style={{ marginTop: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Terms & Scope:</span>
+                      <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{projectContract.terms}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ marginTop: '1rem' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No contract terms specified yet.</p>
+                  {(isOwner || isManager || user?.role === 'admin') && (
+                    <form onSubmit={handleSaveContract} style={{ marginTop: '1rem' }}>
+                      <div className="form-group">
+                        <label>Contract Amount (PKR)</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          placeholder="e.g. 4500000"
+                          value={contractAmountInput}
+                          onChange={(e) => setContractAmountInput(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Terms & Conditions</label>
+                        <textarea
+                          className="form-control"
+                          rows="3"
+                          placeholder="Scope of work, milestone delivery expectations..."
+                          value={contractTermsInput}
+                          onChange={(e) => setContractTermsInput(e.target.value)}
+                        />
+                      </div>
+                      <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>
+                        Save Contract Terms
+                      </button>
+                    </form>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Record Payment Box (Owners) */}
+            <div className="card">
+              <h4>Disburse Contractor Payment</h4>
+              {(isOwner || isAccountant || user?.role === 'admin') ? (
+                <form onSubmit={handleRecordPayment} style={{ marginTop: '1rem' }}>
+                  <div className="form-group">
+                    <label>Payment Amount (PKR)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="e.g. 500000"
+                      value={paymentAmountInput}
+                      onChange={(e) => setPaymentAmountInput(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Payment Method</label>
+                    <select
+                      className="form-control"
+                      value={paymentMethodInput}
+                      onChange={(e) => setPaymentMethodInput(e.target.value)}
+                    >
+                      <option value="bank_transfer">Bank Transfer / IBFT</option>
+                      <option value="cheque">Cheque</option>
+                      <option value="cash">Cash</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Reference / Cheque Number</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g. TXN-984213 or Cheque #0045"
+                      value={paymentRefInput}
+                      onChange={(e) => setPaymentRefInput(e.target.value)}
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>
+                    Record Disbursed Payment
+                  </button>
+                </form>
+              ) : (
+                <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>
+                  Payments can only be disbursed and recorded by the Company Owner or Accountant.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Payment History Table */}
+          <div style={{ marginTop: '2.5rem' }}>
+            <h4 style={{ marginBottom: '1rem' }}>Payment Disbursements History</h4>
+            <div className="table-container">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Contractor</th>
+                    <th>Amount (PKR)</th>
+                    <th>Payment Method</th>
+                    <th>Reference</th>
+                    <th>Recorded By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {projectPayments.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No payments released yet.</td>
+                    </tr>
+                  ) : (
+                    projectPayments.map((p) => (
+                      <tr key={p._id}>
+                        <td>{new Date(p.paymentDate).toLocaleDateString()}</td>
+                        <td>{p.contractorId?.name || 'Contractor'}</td>
+                        <td><strong>Rs {p.amount.toLocaleString()}</strong></td>
+                        <td><span className="badge badge-info">{p.paymentMethod}</span></td>
+                        <td>{p.referenceNumber || 'N/A'}</td>
+                        <td>{p.recordedBy?.name || 'Admin'}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. CONTRACTOR ASSIGNMENTS TAB (Owner Only) */}
+      {activeTab === 'contractors' && (
+        <div style={styles.tabContent}>
+          <div style={styles.tabActions}>
+            <div>
+              <h3>Contractor Access Control (Project Security)</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Contractors only see projects where they have an active assignment.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-2" style={{ marginTop: '1.5rem', gap: '2rem' }}>
+            {/* Assign Contractor Form */}
+            <div className="card">
+              <h4>Assign Contractor to this Site</h4>
+              <form onSubmit={handleAssignContractor} style={{ marginTop: '1rem' }}>
+                <div className="form-group">
+                  <label>Select Company Contractor</label>
+                  <select
+                    className="form-control"
+                    value={selectedContractorToAssign}
+                    onChange={(e) => setSelectedContractorToAssign(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Choose Contractor --</option>
+                    {companyContractors.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.name} ({c.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                  Grant Project Access
+                </button>
+              </form>
+            </div>
+
+            {/* Currently Assigned Contractors */}
+            <div className="card">
+              <h4>Currently Assigned to {dashboardData.projectName}</h4>
+              <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {dashboardData.assignedContractors?.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)' }}>No contractors currently assigned to this project site.</p>
+                ) : (
+                  dashboardData.assignedContractors.map((ac) => (
+                    <div
+                      key={ac._id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0.75rem',
+                        backgroundColor: 'var(--bg-light)',
+                        borderRadius: 'var(--radius-sm)',
+                      }}
+                    >
+                      <div>
+                        <strong>{ac.name}</strong>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{ac.email}</div>
+                      </div>
+                      <button
+                        onClick={() => handleRevokeContractor(ac._id)}
+                        className="btn btn-outline"
+                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderColor: 'var(--alert-red)', color: 'var(--alert-red)' }}
+                      >
+                        Revoke Access
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>

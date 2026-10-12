@@ -33,9 +33,18 @@ router.get('/', protect, async (req, res) => {
     const materials = await Material.find(materialFilter);
     const totalMaterialsQty = materials.reduce((sum, m) => sum + (m.quantity || 0), 0);
 
-    // Sum of all budgets
+    // Sum of all budgets and approved expenses
     const totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0);
-    const totalSpent = projects.reduce((sum, p) => sum + (p.spent || 0), 0);
+    const approvedExpensesList = await Expense.find({
+      ...expenseFilter,
+      status: { $in: ['approved', null] },
+    });
+    const pendingExpensesList = await Expense.find({
+      ...expenseFilter,
+      status: 'pending',
+    });
+    const totalSpent = approvedExpensesList.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const totalPending = pendingExpensesList.reduce((sum, e) => sum + (e.amount || 0), 0);
 
     // Chart 1: Project Progress
     const progressData = projects.slice(0, 5).map(p => ({
@@ -126,7 +135,10 @@ router.get('/', protect, async (req, res) => {
         projects: projectsCount,
         workers: workersCount,
         materials: totalMaterialsQty,
-        budget: totalSpent
+        budget: totalSpent,
+        totalBudget,
+        pendingExpenses: totalPending,
+        remainingBudget: totalBudget - totalSpent,
       },
       progressData,
       budgetData,

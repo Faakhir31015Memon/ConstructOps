@@ -12,7 +12,7 @@ router.use(protect);
 
 router
   .route('/')
-  .post(authorize('owner', 'manager'), createReport)
+  .post(authorize('owner', 'manager', 'contractor'), createReport)
   .get(getReports);
 
 router.route('/:id').delete(authorize('owner'), deleteReport);

@@ -14,6 +14,7 @@ import reportRoutes from './routes/report.routes.js';
 import alertRoutes from './routes/alert.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import userRoutes from './routes/user.routes.js';
+import contractorRoutes from './routes/contractor.routes.js';
 
 dotenv.config();
 
@@ -58,6 +59,7 @@ app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/alerts', alertRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/contractors', contractorRoutes);
 
 // Error Handling Middleware
 app.use((req, res, next) => {
