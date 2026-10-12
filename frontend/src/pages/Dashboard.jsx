@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getDashboardStats, getUsers, updateUserStatus, deleteUser } from '../services/api';
 import { Briefcase, Users, Layers, DollarSign, Calendar, Clock, MapPin, User, FileText, Lock, Unlock } from 'lucide-react';
+import ExportButtons from '../components/ExportButtons';
 
 const SvgBarChart = ({ data }) => {
   const chartHeight = 160;
@@ -232,9 +233,14 @@ const Dashboard = () => {
   return (
     <div style={styles.container}>
       {/* Top Header */}
-      <div>
-        <h1 style={styles.title}>System Admin Dashboard</h1>
-        <p style={styles.subtitle}>Overview of all construction sites, labor attendance, and supplies.</p>
+      <div style={styles.headerRow}>
+        <div>
+          <h1 style={styles.title}>System Admin Dashboard</h1>
+          <p style={styles.subtitle}>Overview of all construction sites, labor attendance, and supplies.</p>
+        </div>
+        <ExportButtons
+          label="Full company report (all projects)"
+        />
       </div>
 
       {/* Stats Cards */}
@@ -711,6 +717,13 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '2rem',
+  },
+  headerRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '1rem',
+    flexWrap: 'wrap',
   },
   title: {
     fontSize: '1.75rem',

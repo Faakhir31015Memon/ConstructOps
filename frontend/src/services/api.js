@@ -243,5 +243,43 @@ export const recordProjectPayment = async (paymentData) => {
   return data;
 };
 
+// --- EXPORT REPORT API METHODS ---
+const requestExport = async (url) => {
+  const response = await API.get(url, { responseType: 'blob' });
+  if (response.data.type && response.data.type.includes('application/json')) {
+    const text = await response.data.text();
+    let message = 'Export failed';
+    try {
+      message = JSON.parse(text).message || message;
+    } catch {
+      /* keep default message */
+    }
+    throw new Error(message);
+  }
+
+  const disposition = response.headers['content-disposition'] || '';
+  const utf8Name = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  const plainName = disposition.match(/filename="([^"]+)"/i);
+  const filename = decodeURIComponent(utf8Name?.[1] || plainName?.[1] || 'constructops-report');
+
+  return { blob: response.data, filename };
+};
+
+export const exportProjectReport = async (projectId, format) =>
+  requestExport(`/export/projects/${projectId}/${format}`);
+
+export const exportCompanyReport = async (format) => requestExport(`/export/company/${format}`);
+
+export const saveBlobToDisk = (blob, filename) => {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
 export default API;
 

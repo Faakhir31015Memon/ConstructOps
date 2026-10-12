@@ -26,6 +26,7 @@ import {
   getProjectPayments,
   recordProjectPayment
 } from '../services/api';
+import ExportButtons from '../components/ExportButtons';
 import { 
   Briefcase, 
   DollarSign, 
@@ -463,6 +464,9 @@ const ProjectDetail = () => {
         <div>
           <span style={styles.subText}>{dashboardData.location}</span>
           <h1 style={styles.projectTitle}>{dashboardData.projectName}</h1>
+          <div style={{ marginTop: '0.75rem' }}>
+            <ExportButtons projectId={id} label="Download full project detail (Excel / PDF)" />
+          </div>
         </div>
         <div style={styles.projectHeaderStats}>
           <div style={styles.headerStatBox}>
