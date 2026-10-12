@@ -315,12 +315,15 @@ export async function buildProjectExport(projectId, user) {
   const project = await canAccessProject(user, projectId);
   if (!project) return null;
   const bundle = await loadProjectBundle(project, user);
-  return { scope: 'project', title: bundle.project.name, ...bundle };
+  return { scope: 'project', title: bundle.project.name, meta: exportMeta(user), ...bundle };
 }
 
 export async function buildCompanyExport(user) {
+  const meta = exportMeta(user);
   const projects = await findProjectsForUser(user);
-  if (!projects.length) return { scope: 'company', title: 'Company overview', projects: [], contractorMap: [], totals: {} };
+  if (!projects.length) {
+    return { scope: 'company', title: 'Company overview', meta, projects: [], contractorMap: [], bundles: [], totals: {} };
+  }
 
   const bundles = [];
   for (const p of projects) bundles.push(await loadProjectBundle(p, user));
@@ -346,6 +349,7 @@ export async function buildCompanyExport(user) {
   return {
     scope: 'company',
     title: bundles[0].project.company,
+    meta,
     company: { name: bundles[0].project.company, plan: bundles[0].project.companyPlan },
     owner: bundles[0].owner,
     projects: bundles.map((b) => b.project),
