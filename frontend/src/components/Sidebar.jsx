@@ -9,10 +9,11 @@ import {
   Bell, 
   Settings, 
   LogOut,
-  HardHat
+  HardHat,
+  X
 } from 'lucide-react';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
@@ -24,10 +25,10 @@ const Sidebar = () => {
   };
 
   return (
-    <div style={styles.sidebar}>
+    <aside className={`app-sidebar ${isOpen ? 'app-sidebar-open' : ''}`}>
       {/* Brand Header */}
-      <div style={styles.brand}>
-        <svg width="200" height="50" viewBox="0 0 400 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <div style={styles.brand} className="sidebar-brand-row">
+        <svg width="180" height="45" viewBox="0 0 400 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           {/* C Shape */}
           <path d="M80 20 A30 30 0 1 0 80 80 L65 70 A18 18 0 1 1 65 30 Z" fill="#FFFFFF"/>
           {/* Building Lines */}
@@ -42,6 +43,17 @@ const Sidebar = () => {
             Ops
           </text>
         </svg>
+
+        {onClose && (
+          <button 
+            type="button" 
+            className="sidebar-close-btn" 
+            onClick={onClose}
+            aria-label="Close navigation sidebar"
+          >
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       {/* User Card */}
@@ -117,7 +129,7 @@ const Sidebar = () => {
         <LogOut size={20} />
         <span>Log Out</span>
       </button>
-    </div>
+    </aside>
   );
 };
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, Briefcase, Check } from 'lucide-react';
+import { Bell, Briefcase, Check, Menu } from 'lucide-react';
 import { getAlerts, markAlertRead } from '../services/api';
 
-const Navbar = ({ title }) => {
+const Navbar = ({ title, onToggleSidebar }) => {
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
 
@@ -41,14 +41,24 @@ const Navbar = ({ title }) => {
   const unreadCount = alerts.filter(a => !a.isRead).length;
 
   return (
-    <div style={styles.navbar}>
-      <div style={styles.left}>
-        <h2 style={styles.title}>{title || 'ConstructOps Dashboard'}</h2>
+    <header className="app-navbar">
+      <div className="navbar-left">
+        {onToggleSidebar && (
+          <button 
+            type="button" 
+            className="navbar-toggle-btn" 
+            onClick={onToggleSidebar}
+            aria-label="Toggle navigation menu"
+          >
+            <Menu size={22} />
+          </button>
+        )}
+        <h2 className="navbar-title">{title || 'ConstructOps Dashboard'}</h2>
       </div>
 
-      <div style={styles.right}>
+      <div className="navbar-right">
         {user && user.companyName && (
-          <div style={styles.companyBadge}>
+          <div className="navbar-company-badge">
             <Briefcase size={16} />
             <span>{user.companyName}</span>
           </div>

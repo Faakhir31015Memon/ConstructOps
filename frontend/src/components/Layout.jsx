@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
@@ -6,6 +6,7 @@ import Navbar from './Navbar';
 const Layout = ({ title }) => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -18,36 +19,31 @@ const Layout = ({ title }) => {
   }
 
   return (
-    <div style={styles.container}>
-      <Sidebar />
-      <div style={styles.main}>
-        <Navbar title={title} />
-        <div style={styles.content}>
+    <div className="app-layout">
+      {/* Mobile Backdrop Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="sidebar-backdrop" 
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+      />
+
+      <div className="main-viewport">
+        <Navbar 
+          title={title} 
+          onToggleSidebar={() => setSidebarOpen(prev => !prev)} 
+        />
+        <main className="main-content-scroll">
           <Outlet />
-        </div>
+        </main>
       </div>
     </div>
   );
-};
-
-const styles = {
-  container: {
-    display: 'flex',
-    height: '100vh',
-    overflow: 'hidden',
-    backgroundColor: 'var(--bg-light)',
-  },
-  main: {
-    flexGrow: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-  },
-  content: {
-    padding: '2rem',
-    flexGrow: 1,
-    overflowY: 'auto',
-  },
 };
 
 export default Layout;
