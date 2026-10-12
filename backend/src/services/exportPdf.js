@@ -91,7 +91,6 @@ class PdfReport {
   }
 
   section(title) {
-    console.error('TRACE section', title);
     this.ensure(46);
     const doc = this.doc;
     this.space(6);
@@ -144,7 +143,6 @@ class PdfReport {
       doc.y = y + 17;
     };
 
-    console.error('TRACE table', columns.map(c=>c.label).join('/'), 'rows', rows.length);
     drawHeader();
 
     rows.forEach((row, index) => {
@@ -180,7 +178,6 @@ class PdfReport {
   }
 
   photoBlock(reports) {
-    console.error('TRACE photos');
     const doc = this.doc;
     let embedded = 0;
     let bytes = 0;
@@ -223,7 +220,6 @@ class PdfReport {
           break;
         }
         try {
-          console.error('TRACE openImage');
           const size = doc.openImage(image.buffer);
           const scale = Math.min(slotWidth / size.width, 180 / size.height, 1);
           const drawWidth = size.width * scale;
@@ -267,11 +263,11 @@ class PdfReport {
     if (this.notes.imageCap) notes.push('PDF image limit reached; remaining photos are available in the Excel export and in the app.');
     if (this.notes.badImage) notes.push(`One image could not be decoded: ${this.notes.badImage}`);
 
-    console.error('TRACE finalize pages', doc.bufferedPageRange().count);
-    for (let page = 1; page <= doc.bufferedPageRange().count; page += 1) {
-      doc.switchToPage(page - 1);
+    const range = doc.bufferedPageRange();
+    for (let index = 0; index < range.count; index += 1) {
+      doc.switchToPage(index);
       doc.font('Helvetica').fontSize(7).fillColor(MUTED);
-      doc.text(notes.join('   |   '), MARGIN, doc.page.height - 24, {
+      doc.text(notes.join('   |   '), MARGIN, doc.page.height - MARGIN - 12, {
         width: this.contentWidth,
         lineBreak: false,
       });
@@ -563,11 +559,9 @@ function renderCompany(doc, report, data) {
 export async function buildExportPdf(data) {
   const notes = {};
   const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: MARGIN, bufferPages: true });
-  doc.info = {
-    Title: `ConstructOps ${data.scope} report - ${data.title}`,
-    Author: 'ConstructOps',
-    Producer: 'ConstructOps',
-  };
+  doc.info.Title = `ConstructOps ${data.scope} report - ${data.title}`;
+  doc.info.Author = 'ConstructOps';
+  doc.info.Creator = 'ConstructOps export service';
 
   const chunks = [];
   doc.on('data', (chunk) => chunks.push(chunk));
