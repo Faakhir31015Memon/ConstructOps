@@ -122,7 +122,7 @@ const Navbar = ({ title, onToggleSidebar }) => {
           </div>
         </div>
       </div>
-    </div>
+    </header>
   );
 };
 
