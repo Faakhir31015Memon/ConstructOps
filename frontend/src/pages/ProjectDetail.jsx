@@ -964,8 +964,8 @@ const ProjectDetail = () => {
                         <td>{log.note || '—'}</td>
                         <td>{log.createdBy?.name}</td>
                       </tr>
-                    ));
-                  })()}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1133,8 +1133,8 @@ const ProjectDetail = () => {
                           </td>
                         )}
                       </tr>
-                    ))
-                  )}
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
