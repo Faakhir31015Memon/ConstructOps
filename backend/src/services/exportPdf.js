@@ -274,17 +274,6 @@ class PdfReport {
   }
 }
 
-function render(doc, report, data) {
-  report.headerText = `ConstructOps - ${data.title}`;
-  report.footerText = `${data.project?.company || data.company?.name || ''}`;
-  report.by = `${data.meta.generatedBy.name} (${data.meta.generatedBy.role})`;
-
-  doc.fontSize(9).fillColor(INK);
-
-  if (data.scope === 'project') renderProject(doc, report, data);
-  else renderCompany(doc, report, data);
-}
-
 function renderProject(doc, report, data) {
   report.section('Project summary');
   report.keyValueRows([
@@ -596,5 +585,3 @@ export async function buildProjectPdf(data) {
 
   return { buffer, warnings: noteLines };
 }
-
-export { money, shortDate };

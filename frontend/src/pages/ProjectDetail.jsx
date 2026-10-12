@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   getProjectDashboard, 
@@ -44,7 +44,8 @@ import {
   UserPlus, 
   Package, 
   ArrowDownLeft, 
-  ArrowUpRight 
+  ArrowUpRight,
+  Clock 
 } from 'lucide-react';
 
 const ProjectDetail = () => {
