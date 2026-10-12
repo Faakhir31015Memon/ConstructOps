@@ -67,7 +67,7 @@ class PdfReport {
     const doc = this.doc;
     const { width, height } = doc.page;
     doc.save();
-    doc.fillRect(0, 0, width, 4).fill(ACCENT);
+    doc.rect(0, 0, width, 4).fill(ACCENT);
     doc.font('Helvetica-Bold').fontSize(8).fillColor(MUTED);
     doc.text(this.headerText || 'ConstructOps report', MARGIN, 12, { width: width - MARGIN * 2 - 90, lineBreak: false });
     doc.font('Helvetica').fontSize(8).text(
