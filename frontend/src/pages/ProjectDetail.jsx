@@ -464,9 +464,18 @@ const ProjectDetail = () => {
         </div>
         <div style={styles.projectHeaderStats}>
           <div style={styles.headerStatBox}>
-            <span style={styles.headerStatLabel}>Budget Spent</span>
+            <span style={styles.headerStatLabel}>Approved Spent</span>
             <span style={styles.headerStatValue}>
               Rs {dashboardData.spent.toLocaleString()} / <span style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>{dashboardData.budget.toLocaleString()}</span>
+            </span>
+          </div>
+          <div style={styles.headerStatBox}>
+            <span style={styles.headerStatLabel}>Pending Due</span>
+            <span style={{
+              ...styles.headerStatValue,
+              color: (dashboardData.totalPendingAmount || 0) > 0 ? '#f39c12' : 'var(--text-muted)'
+            }}>
+              Rs {(dashboardData.totalPendingAmount || 0).toLocaleString()}
             </span>
           </div>
           <div style={styles.headerStatBox}>
@@ -567,26 +576,29 @@ const ProjectDetail = () => {
             
             <div className="card" style={styles.metricCard}>
               <div style={styles.metricHeader}>
-                <span>Total Spent</span>
+                <span>Approved Spent</span>
                 <DollarSign size={20} style={{color: 'var(--primary-orange)'}} />
               </div>
-              <h3 style={{
-                color: (user?.role === 'contractor' && dashboardData.totalPendingAmount > 0)
-                  ? '#f39c12'
-                  : '#ffffff'
-              }}>
+              <h3 style={{ color: 'var(--dark-graphite)' }}>
                 Rs {dashboardData.spent.toLocaleString()}
+              </h3>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Approved Outflow</span>
+            </div>
+
+            <div className="card" style={{ ...styles.metricCard, borderTop: (dashboardData.totalPendingAmount || 0) > 0 ? '3px solid #f39c12' : '1px solid rgba(0, 0, 0, 0.05)' }}>
+              <div style={styles.metricHeader}>
+                <span>Pending Due</span>
+                <Clock size={20} style={{color: (dashboardData.totalPendingAmount || 0) > 0 ? '#f39c12' : 'var(--text-muted)'}} />
+              </div>
+              <h3 style={{ color: (dashboardData.totalPendingAmount || 0) > 0 ? '#f39c12' : 'var(--dark-graphite)' }}>
+                Rs {(dashboardData.totalPendingAmount || 0).toLocaleString()}
               </h3>
               <span style={{
                 fontSize: '0.75rem',
-                color: (user?.role === 'contractor' && dashboardData.totalPendingAmount > 0)
-                  ? '#f39c12'
-                  : 'var(--text-muted)',
-                fontWeight: (user?.role === 'contractor' && dashboardData.totalPendingAmount > 0) ? '600' : 'normal'
+                color: (dashboardData.totalPendingAmount || 0) > 0 ? '#f39c12' : 'var(--text-muted)',
+                fontWeight: (dashboardData.totalPendingAmount || 0) > 0 ? '600' : 'normal'
               }}>
-                {user?.role === 'contractor' && dashboardData.totalPendingAmount > 0
-                  ? `(Rs ${dashboardData.totalPendingAmount.toLocaleString()} Pending Approval)`
-                  : 'Approved Total Outflow'}
+                {(dashboardData.totalPendingAmount || 0) > 0 ? `${dashboardData.pendingCount || 0} Bills Awaiting Approval` : 'No Pending Bills'}
               </span>
             </div>
 
@@ -2162,6 +2174,23 @@ const styles = {
     borderRadius: 'var(--radius-sm)',
     fontSize: '0.9rem',
     fontWeight: '500',
+  },
+  metricCard: {
+    padding: '1.25rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.35rem',
+  },
+  metricHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontSize: '0.78rem',
+    color: 'var(--text-muted)',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: '0.4px',
+    marginBottom: '0.25rem',
   },
 };
 
