@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   getProjectDashboard, 
@@ -1048,163 +1048,293 @@ const ProjectDetail = () => {
         <div style={styles.tabContent}>
           <div style={styles.tabActions}>
             <div>
-              <h3>Contract & Payment Milestones</h3>
+              <h3>
+                {user?.role === 'contractor' ? 'My Contract & Payment Statement' : 'Contract & Payment Milestones'}
+              </h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                Contract agreements, payment releases, and disbursed amounts.
+                {user?.role === 'contractor'
+                  ? 'View your contract terms, track payments received, and check your outstanding balance.'
+                  : 'Contract agreements, payment releases, and disbursed amounts for this project.'}
               </p>
             </div>
           </div>
 
-          <div className="grid grid-2" style={{ marginTop: '1.5rem', gap: '2rem' }}>
-            {/* Contract Terms Box */}
-            <div className="card">
-              <h4>Contract Agreement</h4>
-              {projectContract ? (
-                <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Contractor:</span>
-                    <strong>{projectContract.contractorId?.name || 'Assigned Contractor'}</strong>
+          {/* CONTRACTOR VIEW */}
+          {user?.role === 'contractor' && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginTop: '1.5rem' }}>
+                <div className="card" style={{ ...styles.metricCard, borderTop: '3px solid var(--steel-blue)' }}>
+                  <div style={styles.metricHeader}>
+                    <span>Contract Value</span>
+                    <DollarSign size={18} style={{ color: 'var(--steel-blue)' }} />
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Total Contract Amount:</span>
-                    <strong>Rs {projectContract.contractAmount.toLocaleString()}</strong>
+                  <h3 style={{ color: 'var(--steel-blue)' }}>
+                    Rs {projectContract ? projectContract.contractAmount.toLocaleString() : 'N/A'}
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Agreed Amount</span>
+                </div>
+                <div className="card" style={{ ...styles.metricCard, borderTop: '3px solid var(--success-green)' }}>
+                  <div style={styles.metricHeader}>
+                    <span>Total Received</span>
+                    <DollarSign size={18} style={{ color: 'var(--success-green)' }} />
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Contract Status:</span>
-                    <span className="badge badge-success">{projectContract.status}</span>
+                  <h3 style={{ color: 'var(--success-green)' }}>
+                    Rs {projectPayments.reduce((s, p) => s + p.amount, 0).toLocaleString()}
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Payments Disbursed</span>
+                </div>
+                <div className="card" style={{ ...styles.metricCard, borderTop: '3px solid var(--primary-orange)' }}>
+                  <div style={styles.metricHeader}>
+                    <span>Balance Due</span>
+                    <TrendingUp size={18} style={{ color: 'var(--primary-orange)' }} />
                   </div>
-                  {projectContract.terms && (
-                    <div style={{ marginTop: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Terms & Scope:</span>
-                      <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{projectContract.terms}</p>
+                  <h3 style={{ color: 'var(--primary-orange)' }}>
+                    Rs {projectContract
+                      ? Math.max(0, projectContract.contractAmount - projectPayments.reduce((s, p) => s + p.amount, 0)).toLocaleString()
+                      : 'N/A'}
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Remaining to Receive</span>
+                </div>
+                <div className="card" style={{ ...styles.metricCard, borderTop: '3px solid #9b59b6' }}>
+                  <div style={styles.metricHeader}>
+                    <span>Instalments</span>
+                    <FileText size={18} style={{ color: '#9b59b6' }} />
+                  </div>
+                  <h3 style={{ color: '#9b59b6' }}>{projectPayments.length}</h3>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Payments Received</span>
+                </div>
+              </div>
+
+              <div className="card" style={{ marginTop: '1.5rem' }}>
+                <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <FileText size={18} style={{ color: 'var(--primary-orange)' }} />
+                  My Contract Agreement
+                </h4>
+                {projectContract ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Project</div>
+                        <strong>{dashboardData.projectName}</strong>
+                      </div>
+                      <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Contract Status</div>
+                        <span className="badge badge-success">{projectContract.status}</span>
+                      </div>
+                      <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Contract Amount</div>
+                        <strong style={{ fontSize: '1.1rem', color: 'var(--steel-blue)' }}>
+                          Rs {projectContract.contractAmount.toLocaleString()}
+                        </strong>
+                      </div>
+                      <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Signed Date</div>
+                        <strong>{new Date(projectContract.createdAt || Date.now()).toLocaleDateString()}</strong>
+                      </div>
+                    </div>
+                    {projectContract.terms && (
+                      <div style={{ padding: '1rem', backgroundColor: 'rgba(255,107,0,0.06)', border: '1px solid rgba(255,107,0,0.15)', borderRadius: 'var(--radius-sm)' }}>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '0.4rem' }}>TERMS & SCOPE OF WORK</div>
+                        <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{projectContract.terms}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
+                    <FileText size={32} style={{ marginBottom: '0.5rem', opacity: 0.4 }} />
+                    <p>No contract has been issued for this project yet.</p>
+                    <p style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Contact your company owner to set up the contract.</p>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginTop: '2rem' }}>
+                <h4 style={{ marginBottom: '1rem' }}>My Payment History</h4>
+                <div className="table-container">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Date</th>
+                        <th>Amount (PKR)</th>
+                        <th>Payment Method</th>
+                        <th>Reference No.</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {projectPayments.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                            No payments have been released yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        projectPayments.map((p, idx) => (
+                          <tr key={p._id}>
+                            <td style={{ color: 'var(--text-muted)' }}>{idx + 1}</td>
+                            <td>{new Date(p.paymentDate).toLocaleDateString()}</td>
+                            <td><strong style={{ color: 'var(--success-green)' }}>Rs {p.amount.toLocaleString()}</strong></td>
+                            <td><span className="badge badge-info">{p.paymentMethod.replace('_', ' ')}</span></td>
+                            <td>{p.referenceNumber || 'N/A'}</td>
+                            <td><span className="badge badge-success">Received</span></td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                    {projectPayments.length > 0 && (
+                      <tfoot>
+                        <tr style={{ backgroundColor: 'var(--bg-light)', fontWeight: '700' }}>
+                          <td colSpan="2">Total Received</td>
+                          <td style={{ color: 'var(--success-green)' }}>
+                            Rs {projectPayments.reduce((s, p) => s + p.amount, 0).toLocaleString()}
+                          </td>
+                          <td colSpan="3"></td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* OWNER / MANAGER / ADMIN VIEW */}
+          {user?.role !== 'contractor' && (
+            <>
+              <div className="grid grid-2" style={{ marginTop: '1.5rem', gap: '2rem' }}>
+                <div className="card">
+                  <h4>Contract Agreement</h4>
+                  {projectContract ? (
+                    <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Contractor:</span>
+                        <strong>{projectContract.contractorId?.name || 'Assigned Contractor'}</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Contract Amount:</span>
+                        <strong>Rs {projectContract.contractAmount.toLocaleString()}</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Total Paid Out:</span>
+                        <strong style={{ color: 'var(--success-green)' }}>
+                          Rs {projectPayments.reduce((s, p) => s + p.amount, 0).toLocaleString()}
+                        </strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Balance Remaining:</span>
+                        <strong style={{ color: 'var(--primary-orange)' }}>
+                          Rs {(projectContract.contractAmount - projectPayments.reduce((s, p) => s + p.amount, 0)).toLocaleString()}
+                        </strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Contract Status:</span>
+                        <span className="badge badge-success">{projectContract.status}</span>
+                      </div>
+                      {projectContract.terms && (
+                        <div style={{ marginTop: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Terms & Scope:</span>
+                          <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{projectContract.terms}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: '1rem' }}>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No contract terms specified yet.</p>
+                      {(isOwner || isManager || user?.role === 'admin') && (
+                        <form onSubmit={handleSaveContract} style={{ marginTop: '1rem' }}>
+                          <div className="form-group">
+                            <label>Contract Amount (PKR)</label>
+                            <input type="number" className="form-control" placeholder="e.g. 4500000"
+                              value={contractAmountInput} onChange={(e) => setContractAmountInput(e.target.value)} required />
+                          </div>
+                          <div className="form-group">
+                            <label>Terms & Conditions</label>
+                            <textarea className="form-control" rows="3" placeholder="Scope of work, milestone delivery expectations..."
+                              value={contractTermsInput} onChange={(e) => setContractTermsInput(e.target.value)} />
+                          </div>
+                          <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>Save Contract Terms</button>
+                        </form>
+                      )}
                     </div>
                   )}
                 </div>
-              ) : (
-                <div style={{ marginTop: '1rem' }}>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No contract terms specified yet.</p>
-                  {(isOwner || isManager || user?.role === 'admin') && (
-                    <form onSubmit={handleSaveContract} style={{ marginTop: '1rem' }}>
+
+                <div className="card">
+                  <h4>Disburse Contractor Payment</h4>
+                  {(isOwner || isAccountant || user?.role === 'admin') ? (
+                    <form onSubmit={handleRecordPayment} style={{ marginTop: '1rem' }}>
                       <div className="form-group">
-                        <label>Contract Amount (PKR)</label>
-                        <input
-                          type="number"
-                          className="form-control"
-                          placeholder="e.g. 4500000"
-                          value={contractAmountInput}
-                          onChange={(e) => setContractAmountInput(e.target.value)}
-                          required
-                        />
+                        <label>Payment Amount (PKR)</label>
+                        <input type="number" className="form-control" placeholder="e.g. 500000"
+                          value={paymentAmountInput} onChange={(e) => setPaymentAmountInput(e.target.value)} required />
                       </div>
                       <div className="form-group">
-                        <label>Terms & Conditions</label>
-                        <textarea
-                          className="form-control"
-                          rows="3"
-                          placeholder="Scope of work, milestone delivery expectations..."
-                          value={contractTermsInput}
-                          onChange={(e) => setContractTermsInput(e.target.value)}
-                        />
+                        <label>Payment Method</label>
+                        <select className="form-control" value={paymentMethodInput} onChange={(e) => setPaymentMethodInput(e.target.value)}>
+                          <option value="bank_transfer">Bank Transfer / IBFT</option>
+                          <option value="cheque">Cheque</option>
+                          <option value="cash">Cash</option>
+                          <option value="other">Other</option>
+                        </select>
                       </div>
-                      <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>
-                        Save Contract Terms
-                      </button>
+                      <div className="form-group">
+                        <label>Reference / Cheque Number</label>
+                        <input type="text" className="form-control" placeholder="e.g. TXN-984213 or Cheque #0045"
+                          value={paymentRefInput} onChange={(e) => setPaymentRefInput(e.target.value)} />
+                      </div>
+                      <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>Record Disbursed Payment</button>
                     </form>
+                  ) : (
+                    <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>
+                      Payments can only be disbursed by the Company Owner or Accountant.
+                    </p>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* Record Payment Box (Owners) */}
-            <div className="card">
-              <h4>Disburse Contractor Payment</h4>
-              {(isOwner || isAccountant || user?.role === 'admin') ? (
-                <form onSubmit={handleRecordPayment} style={{ marginTop: '1rem' }}>
-                  <div className="form-group">
-                    <label>Payment Amount (PKR)</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      placeholder="e.g. 500000"
-                      value={paymentAmountInput}
-                      onChange={(e) => setPaymentAmountInput(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Payment Method</label>
-                    <select
-                      className="form-control"
-                      value={paymentMethodInput}
-                      onChange={(e) => setPaymentMethodInput(e.target.value)}
-                    >
-                      <option value="bank_transfer">Bank Transfer / IBFT</option>
-                      <option value="cheque">Cheque</option>
-                      <option value="cash">Cash</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Reference / Cheque Number</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="e.g. TXN-984213 or Cheque #0045"
-                      value={paymentRefInput}
-                      onChange={(e) => setPaymentRefInput(e.target.value)}
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>
-                    Record Disbursed Payment
-                  </button>
-                </form>
-              ) : (
-                <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>
-                  Payments can only be disbursed and recorded by the Company Owner or Accountant.
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Payment History Table */}
-          <div style={{ marginTop: '2.5rem' }}>
-            <h4 style={{ marginBottom: '1rem' }}>Payment Disbursements History</h4>
-            <div className="table-container">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Contractor</th>
-                    <th>Amount (PKR)</th>
-                    <th>Payment Method</th>
-                    <th>Reference</th>
-                    <th>Recorded By</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {projectPayments.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No payments released yet.</td>
-                    </tr>
-                  ) : (
-                    projectPayments.map((p) => (
-                      <tr key={p._id}>
-                        <td>{new Date(p.paymentDate).toLocaleDateString()}</td>
-                        <td>{p.contractorId?.name || 'Contractor'}</td>
-                        <td><strong>Rs {p.amount.toLocaleString()}</strong></td>
-                        <td><span className="badge badge-info">{p.paymentMethod}</span></td>
-                        <td>{p.referenceNumber || 'N/A'}</td>
-                        <td>{p.recordedBy?.name || 'Admin'}</td>
+              <div style={{ marginTop: '2.5rem' }}>
+                <h4 style={{ marginBottom: '1rem' }}>Payment Disbursements History</h4>
+                <div className="table-container">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Date</th><th>Contractor</th><th>Amount (PKR)</th>
+                        <th>Payment Method</th><th>Reference</th><th>Recorded By</th>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                    </thead>
+                    <tbody>
+                      {projectPayments.length === 0 ? (
+                        <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No payments released yet.</td></tr>
+                      ) : (
+                        projectPayments.map((p) => (
+                          <tr key={p._id}>
+                            <td>{new Date(p.paymentDate).toLocaleDateString()}</td>
+                            <td>{p.contractorId?.name || 'Contractor'}</td>
+                            <td><strong>Rs {p.amount.toLocaleString()}</strong></td>
+                            <td><span className="badge badge-info">{p.paymentMethod}</span></td>
+                            <td>{p.referenceNumber || 'N/A'}</td>
+                            <td>{p.recordedBy?.name || 'Admin'}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                    {projectPayments.length > 0 && (
+                      <tfoot>
+                        <tr style={{ backgroundColor: 'var(--bg-light)', fontWeight: '700' }}>
+                          <td colSpan="2">Total Disbursed</td>
+                          <td>Rs {projectPayments.reduce((s, p) => s + p.amount, 0).toLocaleString()}</td>
+                          <td colSpan="3"></td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
-
       {/* 7. CONTRACTOR ASSIGNMENTS TAB (Owner Only) */}
       {activeTab === 'contractors' && (
         <div style={styles.tabContent}>
@@ -1999,6 +2129,22 @@ const styles = {
     fontSize: '0.9rem',
     fontWeight: '500',
   },
-};
+  metricCard: {
+    padding: '1.25rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.35rem',
+  },
+  metricHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontSize: '0.78rem',
+    color: 'var(--text-muted)',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: '0.4px',
+    marginBottom: '0.25rem',
+  },};
 
 export default ProjectDetail;
