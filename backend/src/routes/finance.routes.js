@@ -2,6 +2,7 @@ import express from 'express';
 import {
   addExpense,
   getExpenses,
+  reviewExpense,
   updateExpense,
   deleteExpense,
 } from '../controllers/expense.controller.js';
@@ -13,12 +14,14 @@ router.use(protect);
 
 router
   .route('/')
-  .post(authorize('owner', 'accountant'), addExpense)
+  .post(authorize('owner', 'accountant', 'manager', 'contractor'), addExpense)
   .get(getExpenses);
+
+router.put('/:id/review', authorize('owner', 'manager'), reviewExpense);
 
 router
   .route('/:id')
-  .put(authorize('owner', 'accountant'), updateExpense)
-  .delete(authorize('owner'), deleteExpense);
+  .put(authorize('owner', 'accountant', 'manager', 'contractor'), updateExpense)
+  .delete(authorize('owner', 'contractor'), deleteExpense);
 
 export default router;
