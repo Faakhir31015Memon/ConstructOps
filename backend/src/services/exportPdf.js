@@ -144,7 +144,7 @@ class PdfReport {
       doc.y = y + 17;
     };
 
-    console.error('TRACE table', this.rows_label=arguments.callee);
+    console.error('TRACE table', columns.map(c=>c.label).join('/'), 'rows', rows.length);
     drawHeader();
 
     rows.forEach((row, index) => {
