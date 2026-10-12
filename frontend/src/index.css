@@ -400,7 +400,7 @@ button, input, select, textarea {
   padding: 0.4rem 0.85rem;
   background-color: var(--bg-light);
   border: 1px solid var(--border-color);
-  borderRadius: 50px;
+  border-radius: 50px;
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--dark-graphite);
