@@ -3,11 +3,7 @@ import mongoose from 'mongoose';
 let connection;
 
 const resolveUri = () => {
-  if (process.env.DB_URI) return process.env.DB_URI;
-  if (process.env.VERCEL) {
-    throw new Error('DB_URI is not set. Add it under Vercel Project Settings → Environment Variables.');
-  }
-  return 'mongodb://localhost:27017/constructops';
+  return process.env.DB_URI || 'mongodb://localhost:27017/constructops';
 };
 
 const connectDB = async () => {

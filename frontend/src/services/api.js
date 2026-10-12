@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Same-origin on Vercel (/api/v1) unless VITE_API_BASE_URL points to a separate backend
 const BASE_URL = import.meta.env.VITE_API_BASE_URL
   ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')}/api/v1`
   : '/api/v1';
