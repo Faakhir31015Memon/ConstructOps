@@ -567,20 +567,33 @@ function renderCompany(doc, report, data) {
 export async function buildProjectPdf(data) {
   const notes = {};
   const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: MARGIN, bufferPages: true });
-  const chunks = [];
-  doc.on('data', (chunk) => chunks.push(chunk));
   doc.info = {
     Title: `ConstructOps ${data.scope} report - ${data.title}`,
     Author: 'ConstructOps',
     Producer: 'ConstructOps',
   };
 
+  const chunks = [];
+  doc.on('data', (chunk) => chunks.push(chunk));
+
   const report = new PdfReport(doc, notes);
+  report.headerText = `ConstructOps - ${data.title}`;
+  report.footerText = `${data.project?.company || data.company?.name || ''}`;
+  report.by = `${data.meta.generatedBy.name} (${data.meta.generatedBy.role})`;
+
   report.pageCount = 1;
-  render(doc, report, data);
+  report.drawPageChrome();
+
+  doc.fontSize(9).fillColor(INK);
+  if (data.scope === 'project') renderProject(doc, report, data);
+  else renderCompany(doc, report, data);
   const noteLines = report.finalize();
 
-  const buffer = Buffer.concat(chunks);
+  const buffer = await new Promise((resolve, reject) => {
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+  });
+
   return { buffer, warnings: noteLines };
 }
 

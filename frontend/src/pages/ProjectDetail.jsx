@@ -2175,23 +2175,7 @@ const styles = {
     fontSize: '0.9rem',
     fontWeight: '500',
   },
-  metricCard: {
-    padding: '1.25rem',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.35rem',
-  },
-  metricHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontSize: '0.78rem',
-    color: 'var(--text-muted)',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.4px',
-    marginBottom: '0.25rem',
-  },
+
 };
 
 export default ProjectDetail;
