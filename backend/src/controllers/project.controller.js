@@ -229,14 +229,21 @@ export const getProjectDashboard = async (req, res) => {
 
     // 5. Gather category-wise approved expenses
     const expensesByCategory = {
-      labor: 0,
       material: 0,
+      labor: 0,
+      machinery: 0,
       transport: 0,
+      subcontractor: 0,
+      utilities: 0,
+      permits: 0,
+      safety: 0,
       misc: 0,
     };
     approvedExpenses.forEach((exp) => {
       if (expensesByCategory[exp.category] !== undefined) {
         expensesByCategory[exp.category] += exp.amount;
+      } else {
+        expensesByCategory.misc = (expensesByCategory.misc || 0) + exp.amount;
       }
     });
 

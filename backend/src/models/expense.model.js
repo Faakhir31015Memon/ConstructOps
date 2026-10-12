@@ -15,7 +15,17 @@ const expenseSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['labor', 'material', 'transport', 'misc'],
+      enum: [
+        'material',
+        'labor',
+        'machinery',
+        'transport',
+        'subcontractor',
+        'utilities',
+        'permits',
+        'safety',
+        'misc'
+      ],
       required: true,
     },
     amount: {

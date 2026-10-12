@@ -107,8 +107,9 @@ const ProjectDetail = () => {
 
   // 4. Expense Form
   const [eAmount, setEAmount] = useState('');
-  const [eCategory, setECategory] = useState('labor');
+  const [eCategory, setECategory] = useState('material');
   const [eDesc, setEDesc] = useState('');
+  const [selectedExpenseCategoryFilter, setSelectedExpenseCategoryFilter] = useState('all');
 
   // 5. Daily Report Form
   const [rDesc, setRDesc] = useState('');
@@ -656,22 +657,27 @@ const ProjectDetail = () => {
               {/* Category Breakdown list */}
               <div style={styles.categoryStatsContainer}>
                 <h4>Category Breakdown</h4>
-                <div style={styles.categoryRow}>
-                  <span>Labor Wages</span>
-                  <strong>Rs {dashboardData.expensesByCategory.labor.toLocaleString()}</strong>
-                </div>
-                <div style={styles.categoryRow}>
-                  <span>Material Purchases</span>
-                  <strong>Rs {dashboardData.expensesByCategory.material.toLocaleString()}</strong>
-                </div>
-                <div style={styles.categoryRow}>
-                  <span>Transport</span>
-                  <strong>Rs {dashboardData.expensesByCategory.transport.toLocaleString()}</strong>
-                </div>
-                <div style={styles.categoryRow}>
-                  <span>Miscellaneous</span>
-                  <strong>Rs {dashboardData.expensesByCategory.misc.toLocaleString()}</strong>
-                </div>
+                {[
+                  { key: 'material', label: 'Material Purchases' },
+                  { key: 'labor', label: 'Labor Wages' },
+                  { key: 'machinery', label: 'Heavy Machinery & Equipment' },
+                  { key: 'transport', label: 'Transport & Logistics' },
+                  { key: 'subcontractor', label: 'Subcontractor Contracts' },
+                  { key: 'utilities', label: 'Utilities (Water / Power / Fuel)' },
+                  { key: 'permits', label: 'Govt Fees & Approvals' },
+                  { key: 'safety', label: 'Safety & PPE Kits' },
+                  { key: 'misc', label: 'Miscellaneous Site Outflow' },
+                ].map(({ key, label }) => {
+                  const val = dashboardData.expensesByCategory?.[key] || 0;
+                  return (
+                    <div key={key} style={styles.categoryRow}>
+                      <span>{label}</span>
+                      <strong style={{ color: val > 0 ? 'var(--dark-graphite)' : 'var(--text-muted)' }}>
+                        Rs {val.toLocaleString()}
+                      </strong>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -958,8 +964,8 @@ const ProjectDetail = () => {
                         <td>{log.note || '—'}</td>
                         <td>{log.createdBy?.name}</td>
                       </tr>
-                    ))
-                  )}
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
@@ -985,6 +991,42 @@ const ProjectDetail = () => {
             </button>
           </div>
 
+          {/* Category Filter Pills */}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)', marginRight: '0.25rem' }}>Category Filter:</span>
+            {[
+              { id: 'all', label: 'All Categories' },
+              { id: 'material', label: '🧱 Material' },
+              { id: 'labor', label: '👷 Labor' },
+              { id: 'machinery', label: '🚜 Machinery' },
+              { id: 'transport', label: '🚚 Transport' },
+              { id: 'subcontractor', label: '🤝 Subcontractor' },
+              { id: 'utilities', label: '⚡ Utilities' },
+              { id: 'permits', label: '🏛️ Permits' },
+              { id: 'safety', label: '🦺 Safety' },
+              { id: 'misc', label: '📦 Misc' },
+            ].map(pill => (
+              <button
+                key={pill.id}
+                type="button"
+                onClick={() => setSelectedExpenseCategoryFilter(pill.id)}
+                style={{
+                  border: selectedExpenseCategoryFilter === pill.id ? '1px solid var(--primary-orange)' : '1px solid var(--border-color)',
+                  backgroundColor: selectedExpenseCategoryFilter === pill.id ? 'var(--primary-orange)' : 'var(--bg-white)',
+                  color: selectedExpenseCategoryFilter === pill.id ? '#ffffff' : 'var(--dark-graphite)',
+                  padding: '0.3rem 0.75rem',
+                  borderRadius: '20px',
+                  fontSize: '0.78rem',
+                  fontWeight: selectedExpenseCategoryFilter === pill.id ? '600' : 'normal',
+                  cursor: 'pointer',
+                  transition: 'all var(--transition-fast)'
+                }}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
+
           {actionMessage && (
             <div style={{ backgroundColor: 'rgba(39, 174, 96, 0.1)', color: 'var(--success-green)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginTop: '1rem', fontWeight: '500' }}>
               {actionMessage}
@@ -1006,12 +1048,22 @@ const ProjectDetail = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {expenses.length === 0 ? (
-                    <tr>
-                      <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No expenses recorded.</td>
-                    </tr>
-                  ) : (
-                    expenses.map((exp) => (
+                  {(() => {
+                    const filtered = selectedExpenseCategoryFilter === 'all'
+                      ? expenses
+                      : expenses.filter(e => e.category === selectedExpenseCategoryFilter);
+
+                    if (filtered.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem 1rem' }}>
+                            No expenses recorded under {selectedExpenseCategoryFilter === 'all' ? 'this project' : '"' + selectedExpenseCategoryFilter + '" category'}. Click "+ Record Expense" to add.
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return filtered.map((exp) => (
                       <tr key={exp._id}>
                         <td>{new Date(exp.date).toLocaleDateString()}</td>
                         <td>
@@ -1650,10 +1702,15 @@ const ProjectDetail = () => {
                   value={eCategory}
                   onChange={(e) => setECategory(e.target.value)}
                 >
-                  <option value="labor">Labor wages</option>
-                  <option value="material">Material purchases</option>
-                  <option value="transport">Transport / Logistics</option>
-                  <option value="misc">Miscellaneous</option>
+                  <option value="material">🧱 Raw Material Purchases (Cement, Steel, Bricks, Sand)</option>
+                  <option value="labor">👷 Labor Wages & Overtime</option>
+                  <option value="machinery">🚜 Machinery & Equipment Rental (Excavator, Crane, Mixer)</option>
+                  <option value="transport">🚚 Transport, Freight & Dumper Carriage</option>
+                  <option value="subcontractor">🤝 Subcontractor Services (Plumbing, Electrical, Shuttering)</option>
+                  <option value="utilities">⚡ Site Utilities (Generator Fuel, Water Tankers, Electricity)</option>
+                  <option value="permits">🏛️ Govt Permits, NOC & Soil Testing Fees</option>
+                  <option value="safety">🦺 Site Safety, PPE & Medical Kits</option>
+                  <option value="misc">📦 Miscellaneous Expenses</option>
                 </select>
               </div>
 
