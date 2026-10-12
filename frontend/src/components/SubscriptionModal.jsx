@@ -1,24 +1,26 @@
-import React, { useState } from 'react';
-import { 
-  ShieldCheck, 
-  Clock, 
-  CheckCircle2, 
-  Zap, 
-  AlertTriangle, 
-  Lock, 
-  Calendar, 
-  Sparkles, 
+import React, { useState, useEffect } from 'react';
+import {
+  ShieldCheck,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  Lock,
+  Sparkles,
   X,
-  CreditCard
+  CreditCard,
+  Smartphone,
+  Landmark,
+  ArrowLeft,
+  Hourglass
 } from 'lucide-react';
-import { renewSubscription } from '../services/api';
+import { submitSubscriptionPayment, getSubscriptionPlans } from '../services/api';
 
 const PLANS = [
   {
     id: '1_month',
     name: '1 Month Plan',
     duration: '30 Days Access',
-    price: '$29',
+    amountPKR: 15000,
     billing: 'billed monthly',
     popular: false,
     badge: null,
@@ -34,8 +36,8 @@ const PLANS = [
     id: '6_months',
     name: '6 Months Plan',
     duration: '180 Days Access',
-    price: '$149',
-    billing: 'billed semi-annually (save 15%)',
+    amountPKR: 75000,
+    billing: 'billed semi-annually (save ~17%)',
     popular: true,
     badge: 'MOST POPULAR',
     features: [
@@ -50,7 +52,7 @@ const PLANS = [
     id: '12_months',
     name: '12 Months Plan',
     duration: '365 Days Access',
-    price: '$269',
+    amountPKR: 135000,
     billing: 'billed annually (save 25%)',
     popular: false,
     badge: 'BEST VALUE',
@@ -64,47 +66,359 @@ const PLANS = [
   },
 ];
 
-const SubscriptionModal = ({ 
-  isOpen, 
-  onClose, 
-  subscription, 
+const METHOD_ICONS = {
+  card: CreditCard,
+  easypaisa: Smartphone,
+  jazzcash: Smartphone,
+  bank_transfer: Landmark,
+};
+
+const formatPKR = (amount) => `Rs ${Number(amount).toLocaleString('en-PK')}`;
+
+const SubscriptionModal = ({
+  isOpen,
+  onClose,
+  subscription,
   onSubscriptionUpdated,
-  isExpiredLock = false 
+  onPaymentSubmitted,
+  isExpiredLock = false
 }) => {
+  const [step, setStep] = useState('plan'); // plan | pay | done
   const [selectedPlan, setSelectedPlan] = useState('6_months');
+  const [selectedMethod, setSelectedMethod] = useState('easypaisa');
+  const [gateway, setGateway] = useState(null);
+  const [transactionId, setTransactionId] = useState('');
+  const [cardHolderName, setCardHolderName] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  useEffect(() => {
+    if (isOpen) {
+      getSubscriptionPlans()
+        .then((res) => { if (res.success) setGateway(res.gateway); })
+        .catch(() => { /* gateway info is optional */ });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setStep(subscription?.pendingPayment ? 'pending' : 'plan');
+      setError('');
+      setSuccessMsg('');
+    }
+  }, [isOpen, subscription?.pendingPayment]);
+
   if (!isOpen) return null;
 
-  const handleActivate = async () => {
+  const currentPlan = PLANS.find((p) => p.id === selectedPlan);
+
+  const handleSubmitPayment = async () => {
     setLoading(true);
     setError('');
-    setSuccessMsg('');
 
     try {
-      const res = await renewSubscription(selectedPlan);
-      if (res.success) {
-        setSuccessMsg(res.message || 'Plan reactivated successfully!');
-        if (onSubscriptionUpdated) {
-          onSubscriptionUpdated(res.subscription);
-        }
-        setTimeout(() => {
-          if (!isExpiredLock && onClose) {
-            onClose();
-          }
-        }, 1200);
+      const payload = {
+        plan: selectedPlan,
+        method: selectedMethod,
+      };
+      if (selectedMethod === 'card') {
+        payload.cardHolderName = cardHolderName;
+        payload.cardNumber = cardNumber;
       } else {
-        setError(res.message || 'Failed to activate plan.');
+        payload.transactionReference = transactionId;
+      }
+
+      const res = await submitSubscriptionPayment(payload);
+      if (res.success) {
+        setSuccessMsg(res.message || 'Payment submitted for verification!');
+        setStep('pending');
+        if (onPaymentSubmitted) onPaymentSubmitted();
+      } else {
+        setError(res.message || 'Payment submission failed.');
       }
     } catch (err) {
-      console.error('Subscription renewal error:', err);
+      console.error('Subscription payment error:', err);
       setError(err.response?.data?.message || 'Error communicating with server.');
     } finally {
       setLoading(false);
     }
   };
+
+  const methodInstruction = gateway?.methods?.find((m) => m.id === selectedMethod);
+
+  const renderPending = () => {
+    const pending = subscription?.pendingPayment;
+    return (
+      <div style={styles.pendingCard}>
+        <Hourglass size={40} color="#d97706" />
+        <h3 style={{ margin: '12px 0 6px', color: '#92400e', fontSize: '1.15rem' }}>
+          {successMsg ? 'Payment Submitted for Verification' : 'Payment Under Review'}
+        </h3>
+        <p style={{ margin: 0, fontSize: '0.9rem', color: '#78350f', lineHeight: 1.5, maxWidth: '520px' }}>
+          {successMsg || 'Your payment is being verified by the ConstructOps admin team. '}
+          {pending && (
+            <>
+              <strong>{pending.plan.replace('_', ' ')}</strong> plan — <strong>{formatPKR(pending.amount)}</strong> via{' '}
+              <strong>{String(pending.method).replace('_', ' ').toUpperCase()}</strong>.
+            </>
+          )}{' '}
+          Your login will be activated as soon as the admin approves the payment.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login?payment=pending';
+          }}
+          style={styles.activateBtn}
+        >
+          <Lock size={18} />
+          <span>Go to Login Screen</span>
+        </button>
+      </div>
+    );
+  };
+
+  const renderPlanStep = () => (
+    <>
+      {/* Status Callout */}
+      {subscription && !subscription.pendingPayment && (
+        <div style={isExpiredLock ? styles.expiredBanner : styles.activeBanner}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isExpiredLock ? (
+              <AlertTriangle size={18} color="#dc2626" />
+            ) : (
+              <Clock size={18} color="#d97706" />
+            )}
+            <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>
+              {isExpiredLock
+                ? 'Account is currently suspended'
+                : subscription.isTrial
+                ? `Free Trial Active: ${subscription.daysRemaining} Day(s) Remaining`
+                : `Plan: ${subscription.plan.replace('_', ' ').toUpperCase()} (${subscription.daysRemaining} days left)`}
+            </span>
+          </div>
+          {subscription.subscriptionEndDate && (
+            <span style={{ fontSize: '0.8rem', opacity: 0.85 }}>
+              Expires: {new Date(subscription.subscriptionEndDate).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+      )}
+
+      {error && step === 'plan' && <div style={styles.errorAlert}>{error}</div>}
+
+      {/* Plans Grid */}
+      <div style={styles.plansGrid}>
+        {PLANS.map((plan) => {
+          const isSelected = selectedPlan === plan.id;
+          return (
+            <div
+              key={plan.id}
+              onClick={() => setSelectedPlan(plan.id)}
+              style={{
+                ...styles.planCard,
+                borderColor: isSelected ? 'var(--construction-orange, #ff6b00)' : '#e5e7eb',
+                backgroundColor: isSelected ? '#fff9f5' : '#ffffff',
+                boxShadow: isSelected ? '0 10px 25px -5px rgba(255, 107, 0, 0.15)' : 'none',
+              }}
+            >
+              {plan.badge && (
+                <div
+                  style={{
+                    ...styles.planBadge,
+                    backgroundColor: plan.popular ? 'var(--construction-orange, #ff6b00)' : '#059669',
+                  }}
+                >
+                  {plan.badge}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <h3 style={styles.planName}>{plan.name}</h3>
+                  <div style={styles.planDuration}>{plan.duration}</div>
+                </div>
+                <div
+                  style={{
+                    ...styles.radioCircle,
+                    borderColor: isSelected ? '#ff6b00' : '#cbd5e1',
+                    backgroundColor: isSelected ? '#ff6b00' : 'transparent',
+                  }}
+                >
+                  {isSelected && <div style={styles.radioInner} />}
+                </div>
+              </div>
+
+              <div style={styles.priceContainer}>
+                <span style={styles.price}>{formatPKR(plan.amountPKR)}</span>
+                <span style={styles.billing}>{plan.billing}</span>
+              </div>
+
+              <div style={styles.featureList}>
+                {plan.features.map((feat, idx) => (
+                  <div key={idx} style={styles.featureItem}>
+                    <CheckCircle2 size={15} color="#16a34a" style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <span>{feat}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer Actions */}
+      <div style={styles.footer}>
+        <div style={styles.footerNote}>
+          <ShieldCheck size={18} color="#16a34a" />
+          <span>PKR Pricing • EasyPaisa / JazzCash / Card / Bank Transfer • Admin Verified Activation</span>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {!isExpiredLock && onClose && (
+            <button type="button" onClick={onClose} style={styles.cancelBtn}>
+              Cancel
+            </button>
+          )}
+          <button type="button" onClick={() => { setError(''); setStep('pay'); }} style={styles.activateBtn}>
+            <CreditCard size={18} />
+            <span>Proceed to Payment</span>
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
+  const renderPayStep = () => (
+    <>
+      <button type="button" onClick={() => setStep('plan')} style={styles.backBtn}>
+        <ArrowLeft size={15} /> Back to plans
+      </button>
+
+      {/* Selected plan summary */}
+      <div style={styles.planSummary}>
+        <div>
+          <div style={{ fontWeight: '700', fontSize: '1rem', color: '#0f172a' }}>{currentPlan.name}</div>
+          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{currentPlan.duration}</div>
+        </div>
+        <div style={{ fontWeight: '800', fontSize: '1.3rem', color: 'var(--construction-orange, #ff6b00)' }}>
+          {formatPKR(currentPlan.amountPKR)}
+        </div>
+      </div>
+
+      {/* Payment method selection */}
+      <div style={styles.methodGrid}>
+        {(gateway?.methods || [
+          { id: 'card', label: 'Debit / Credit Card' },
+          { id: 'easypaisa', label: 'EasyPaisa' },
+          { id: 'jazzcash', label: 'JazzCash' },
+          { id: 'bank_transfer', label: 'Bank Transfer' },
+        ]).map((m) => {
+          const Icon = METHOD_ICONS[m.id] || CreditCard;
+          const active = selectedMethod === m.id;
+          return (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => { setSelectedMethod(m.id); setError(''); }}
+              style={{
+                ...styles.methodBtn,
+                borderColor: active ? '#ff6b00' : '#e5e7eb',
+                backgroundColor: active ? '#fff9f5' : '#ffffff',
+                color: active ? '#c2410c' : '#334155',
+              }}
+            >
+              <Icon size={18} />
+              <span>{m.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Instructions for selected method */}
+      {methodInstruction && (
+        <div style={styles.instructionBox}>
+          <div style={{ fontWeight: '600', fontSize: '0.85rem', marginBottom: '4px' }}>How to pay</div>
+          <div style={{ fontSize: '0.83rem', color: '#475569', lineHeight: 1.5 }}>{methodInstruction.description}</div>
+          {methodInstruction.accountValue && (
+            <div style={styles.accountChip}>{methodInstruction.accountValue}</div>
+          )}
+          {selectedMethod === 'card' && (
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '6px' }}>
+              Your full card number is never stored — only the last 4 digits are kept for verification.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Method-specific form */}
+      {selectedMethod === 'card' ? (
+        <div style={styles.formGrid}>
+          <div className="form-group">
+            <label>Card Holder Name</label>
+            <input
+              className="form-control"
+              placeholder="Name printed on card"
+              value={cardHolderName}
+              onChange={(e) => setCardHolderName(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>Card Number</label>
+            <input
+              className="form-control"
+              placeholder="XXXX XXXX XXXX XXXX"
+              inputMode="numeric"
+              maxLength={19}
+              value={cardNumber}
+              onChange={(e) => setCardNumber(e.target.value.replace(/[^\d\s]/g, ''))}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="form-group">
+          <label>
+            {selectedMethod === 'bank_transfer' ? 'Transaction / UTR Reference Number' : 'Transaction ID (TID)'}
+          </label>
+          <input
+            className="form-control"
+            placeholder={selectedMethod === 'bank_transfer' ? 'e.g. UTR-123456789' : 'e.g. TID-1234567890'}
+            value={transactionId}
+            onChange={(e) => setTransactionId(e.target.value)}
+          />
+        </div>
+      )}
+
+      {error && <div style={styles.errorAlert}>{error}</div>}
+
+      <div style={styles.footer}>
+        <div style={styles.footerNote}>
+          <ShieldCheck size={18} color="#16a34a" />
+          <span>Payment is verified by admin. Login is blocked until approval.</span>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {!isExpiredLock && onClose && (
+            <button type="button" onClick={onClose} style={styles.cancelBtn} disabled={loading}>
+              Cancel
+            </button>
+          )}
+          <button type="button" onClick={handleSubmitPayment} disabled={loading} style={styles.activateBtn}>
+            {loading ? 'Submitting Payment...' : (
+              <>
+                <ZapIcon />
+                <span>Submit {formatPKR(currentPlan.amountPKR)} Payment</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
+  const ZapIcon = () => <Sparkles size={18} />;
 
   return (
     <div style={styles.overlay}>
@@ -112,150 +426,44 @@ const SubscriptionModal = ({
         {/* Header */}
         <div style={styles.header}>
           <div style={styles.headerLeft}>
-            <div style={isExpiredLock ? styles.lockIconBadge : styles.sparkleBadge}>
-              {isExpiredLock ? <Lock size={22} color="#dc2626" /> : <Sparkles size={22} color="#ff6b00" />}
+            <div style={isExpiredLock || step === 'pending' ? styles.lockIconBadge : styles.sparkleBadge}>
+              {isExpiredLock || step === 'pending' ? (
+                <Lock size={22} color="#dc2626" />
+              ) : (
+                <Sparkles size={22} color="#ff6b00" />
+              )}
             </div>
             <div>
               <h2 style={styles.title}>
-                {isExpiredLock ? 'Account Suspended: Plan Expired' : 'Manage Subscription Plan'}
+                {step === 'pending'
+                  ? 'Payment Under Verification'
+                  : step === 'pay'
+                  ? 'Subscription Payment — PKR'
+                  : isExpiredLock
+                  ? 'Account Suspended: Plan Expired'
+                  : 'Manage Subscription Plan'}
               </h2>
               <p style={styles.subtitle}>
-                {isExpiredLock
-                  ? 'Your 15-day free trial or subscription period has finished. Choose a plan to reactivate your account immediately.'
+                {step === 'pending'
+                  ? 'Awaiting admin approval. You will be able to log in immediately after approval.'
+                  : step === 'pay'
+                  ? 'Pay via Card, EasyPaisa, JazzCash or Bank Transfer, then submit your reference for verification.'
+                  : isExpiredLock
+                  ? 'Your 15-day free trial or subscription period has finished. Pay a plan to reactivate your account after admin verification.'
                   : 'Upgrade or extend your ConstructOps subscription for uninterrupted construction operations.'}
               </p>
             </div>
           </div>
-          {!isExpiredLock && onClose && (
+          {!isExpiredLock && onClose && step !== 'pending' && (
             <button type="button" onClick={onClose} style={styles.closeBtn} aria-label="Close modal">
               <X size={20} />
             </button>
           )}
         </div>
 
-        {/* Status Callout */}
-        {subscription && (
-          <div style={isExpiredLock ? styles.expiredBanner : styles.activeBanner}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {isExpiredLock ? (
-                <AlertTriangle size={18} color="#dc2626" />
-              ) : (
-                <Clock size={18} color="#d97706" />
-              )}
-              <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>
-                {isExpiredLock
-                  ? 'Account is currently suspended'
-                  : subscription.isTrial
-                  ? `Free Trial Active: ${subscription.daysRemaining} Day(s) Remaining`
-                  : `Plan: ${subscription.plan.replace('_', ' ').toUpperCase()} (${subscription.daysRemaining} days left)`}
-              </span>
-            </div>
-            {subscription.subscriptionEndDate && (
-              <span style={{ fontSize: '0.8rem', opacity: 0.85 }}>
-                Expires: {new Date(subscription.subscriptionEndDate).toLocaleDateString()}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Error / Success Feedback */}
-        {error && <div style={styles.errorAlert}>{error}</div>}
-        {successMsg && <div style={styles.successAlert}>{successMsg}</div>}
-
-        {/* Plans Grid */}
-        <div style={styles.plansGrid}>
-          {PLANS.map((plan) => {
-            const isSelected = selectedPlan === plan.id;
-            return (
-              <div
-                key={plan.id}
-                onClick={() => setSelectedPlan(plan.id)}
-                style={{
-                  ...styles.planCard,
-                  borderColor: isSelected ? 'var(--construction-orange, #ff6b00)' : '#e5e7eb',
-                  backgroundColor: isSelected ? '#fff9f5' : '#ffffff',
-                  boxShadow: isSelected ? '0 10px 25px -5px rgba(255, 107, 0, 0.15)' : 'none',
-                }}
-              >
-                {plan.badge && (
-                  <div 
-                    style={{
-                      ...styles.planBadge,
-                      backgroundColor: plan.popular ? 'var(--construction-orange, #ff6b00)' : '#059669',
-                    }}
-                  >
-                    {plan.badge}
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <h3 style={styles.planName}>{plan.name}</h3>
-                    <div style={styles.planDuration}>{plan.duration}</div>
-                  </div>
-                  <div
-                    style={{
-                      ...styles.radioCircle,
-                      borderColor: isSelected ? '#ff6b00' : '#cbd5e1',
-                      backgroundColor: isSelected ? '#ff6b00' : 'transparent',
-                    }}
-                  >
-                    {isSelected && <div style={styles.radioInner} />}
-                  </div>
-                </div>
-
-                <div style={styles.priceContainer}>
-                  <span style={styles.price}>{plan.price}</span>
-                  <span style={styles.billing}>{plan.billing}</span>
-                </div>
-
-                <div style={styles.featureList}>
-                  {plan.features.map((feat, idx) => (
-                    <div key={idx} style={styles.featureItem}>
-                      <CheckCircle2 size={15} color="#16a34a" style={{ flexShrink: 0, marginTop: '2px' }} />
-                      <span>{feat}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Footer Actions */}
-        <div style={styles.footer}>
-          <div style={styles.footerNote}>
-            <ShieldCheck size={18} color="#16a34a" />
-            <span>Instant Activation • Secure Database Sync • Cancel Anytime</span>
-          </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            {!isExpiredLock && onClose && (
-              <button 
-                type="button" 
-                onClick={onClose} 
-                style={styles.cancelBtn}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleActivate}
-              disabled={loading}
-              style={styles.activateBtn}
-            >
-              {loading ? (
-                'Processing Activation...'
-              ) : (
-                <>
-                  <Zap size={18} />
-                  <span>{isExpiredLock ? 'Reactivate My Account Now' : 'Confirm & Activate Plan'}</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+        {step === 'pending' && renderPending()}
+        {step === 'plan' && renderPlanStep()}
+        {step === 'pay' && renderPayStep()}
       </div>
     </div>
   );
@@ -371,14 +579,6 @@ const styles = {
     fontSize: '0.85rem',
     fontWeight: '500',
   },
-  successAlert: {
-    backgroundColor: '#dcfce7',
-    color: '#166534',
-    padding: '10px 14px',
-    borderRadius: '8px',
-    fontSize: '0.85rem',
-    fontWeight: '600',
-  },
   plansGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -437,7 +637,7 @@ const styles = {
     paddingBottom: '12px',
   },
   price: {
-    fontSize: '1.8rem',
+    fontSize: '1.6rem',
     fontWeight: '800',
     color: '#0f172a',
   },
@@ -499,6 +699,80 @@ const styles = {
     fontSize: '0.92rem',
     cursor: 'pointer',
     boxShadow: '0 4px 12px rgba(255, 107, 0, 0.25)',
+  },
+  backBtn: {
+    alignSelf: 'flex-start',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    background: 'none',
+    border: 'none',
+    color: '#64748b',
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    padding: 0,
+  },
+  planSummary: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    borderRadius: '12px',
+    padding: '14px 18px',
+  },
+  methodGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+    gap: '10px',
+  },
+  methodBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 14px',
+    borderRadius: '10px',
+    border: '2px solid',
+    fontSize: '0.86rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+  },
+  instructionBox: {
+    backgroundColor: '#fff9f5',
+    border: '1px solid #ffedd5',
+    borderRadius: '12px',
+    padding: '14px 16px',
+    color: '#7c2d12',
+  },
+  accountChip: {
+    display: 'inline-block',
+    marginTop: '8px',
+    backgroundColor: '#ffffff',
+    border: '1px dashed #fb923c',
+    borderRadius: '8px',
+    padding: '6px 12px',
+    fontSize: '0.85rem',
+    fontWeight: '700',
+    color: '#c2410c',
+    letterSpacing: '0.3px',
+  },
+  formGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '14px',
+  },
+  pendingCard: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '10px',
+    backgroundColor: '#fffbeb',
+    border: '1px solid #fde68a',
+    borderRadius: '16px',
+    padding: '36px 24px',
+    textAlign: 'center',
   },
 };
 

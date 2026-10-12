@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { getDashboardStats, getUsers, updateUserStatus, deleteUser } from '../services/api';
-import { Briefcase, Users, Layers, DollarSign, Calendar, Clock, MapPin, User, FileText, Lock, Unlock } from 'lucide-react';
+import {
+  getDashboardStats,
+  getUsers,
+  updateUserStatus,
+  deleteUser,
+  getAllSubscriptionPayments,
+  approveSubscriptionPayment,
+  rejectSubscriptionPayment,
+} from '../services/api';
+import { Briefcase, Users, Layers, DollarSign, Calendar, Clock, MapPin, User, FileText, Lock, Unlock, Wallet, CheckCircle2, XCircle } from 'lucide-react';
 import ExportButtons from '../components/ExportButtons';
 
 const SvgBarChart = ({ data }) => {
@@ -130,6 +138,7 @@ const SvgLineChart = ({ data }) => {
 const Dashboard = () => {
   const [data, setData] = useState(null);
   const [usersList, setUsersList] = useState([]);
+  const [paymentsList, setPaymentsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('projects');
@@ -149,6 +158,10 @@ const Dashboard = () => {
           const usersRes = await getUsers();
           if (usersRes?.success) {
             setUsersList(usersRes.users);
+          }
+          const paymentsRes = await getAllSubscriptionPayments();
+          if (paymentsRes?.success) {
+            setPaymentsList(paymentsRes.payments || []);
           }
         } catch (uErr) {
           console.warn('Non-admin user cannot access system users list');
@@ -206,6 +219,38 @@ const Dashboard = () => {
     }
   };
 
+  const handlePaymentApprove = async (paymentId, companyName) => {
+    if (window.confirm(`Approve this subscription payment and activate the plan for "${companyName}"? Their users will be able to log in immediately.`)) {
+      try {
+        setLoading(true);
+        const res = await approveSubscriptionPayment(paymentId);
+        alert(res.success ? res.message : res.message || 'Failed to approve payment');
+        if (res.success) await fetchDashboardData();
+        else setLoading(false);
+      } catch (err) {
+        console.error(err);
+        alert(err.response?.data?.message || 'Failed to approve payment');
+        setLoading(false);
+      }
+    }
+  };
+
+  const handlePaymentReject = async (paymentId, companyName) => {
+    const note = window.prompt(`Reject payment for "${companyName}"? Enter a reason (optional):`, 'Payment could not be verified');
+    if (note === null) return;
+    try {
+      setLoading(true);
+      const res = await rejectSubscriptionPayment(paymentId, note);
+      alert(res.success ? res.message : res.message || 'Failed to reject payment');
+      if (res.success) await fetchDashboardData();
+      else setLoading(false);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to reject payment');
+      setLoading(false);
+    }
+  };
+
   if (loading) return <div style={styles.loading}>Loading System Admin Dashboard...</div>;
   if (error || !data) return <div style={styles.errorBox}>{error || 'Failed to initialize'}</div>;
 
@@ -226,6 +271,10 @@ const Dashboard = () => {
       case 'completed': return 'var(--steel-blue)';
       case 'paused': return 'var(--primary-orange)';
       case 'banned': return 'var(--alert-red)';
+      case 'pending_payment':
+      case 'pending': return '#d97706';
+      case 'approved': return 'var(--success-green)';
+      case 'rejected': return 'var(--alert-red)';
       default: return 'var(--text-muted)';
     }
   };
@@ -363,6 +412,20 @@ const Dashboard = () => {
               <User size={16} />
               <span>Users Management</span>
             </button>
+            {storedUser && storedUser.role === 'admin' && (
+              <button 
+                onClick={() => setActiveTab('payments')} 
+                style={{ ...styles.tabBtn, ...(activeTab === 'payments' ? styles.activeTabBtn : {}) }}
+              >
+                <Wallet size={16} />
+                <span>Subscription Payments</span>
+                {paymentsList.some(p => p.status === 'pending') && (
+                  <span style={{ backgroundColor: '#dc2626', color: '#fff', borderRadius: '10px', padding: '1px 7px', fontSize: '0.7rem', fontWeight: '700' }}>
+                    {paymentsList.filter(p => p.status === 'pending').length}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -705,6 +768,130 @@ const Dashboard = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Tab 6: Subscription Payment Verification (Admin) */}
+        {activeTab === 'payments' && storedUser && storedUser.role === 'admin' && (
+          <div style={styles.tableWrapper}>
+            {paymentsList.length === 0 ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                No subscription payments submitted yet.
+              </div>
+            ) : (
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Company</th>
+                    <th style={styles.th}>Submitted By</th>
+                    <th style={styles.th}>Plan / Amount (PKR)</th>
+                    <th style={styles.th}>Method</th>
+                    <th style={styles.th}>Reference / Details</th>
+                    <th style={styles.th}>Submitted At</th>
+                    <th style={styles.th}>Status</th>
+                    <th style={styles.th}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paymentsList.map((payment) => (
+                    <tr key={payment._id} style={styles.tr}>
+                      <td style={styles.td}>
+                        <div style={{ fontWeight: '600' }}>{payment.companyId?.name || 'Unknown Company'}</div>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={{ fontWeight: '500' }}>{payment.submittedBy?.name || '-'}</div>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{payment.submittedBy?.email || ''}</span>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={{ fontWeight: '600' }}>{payment.plan.replace('_', ' ')}</div>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--steel-blue)', fontWeight: '700' }}>
+                          Rs {Number(payment.amount).toLocaleString('en-PK')}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        <span style={{
+                          ...styles.categoryTag,
+                          backgroundColor: 'var(--steel-blue)' + '15',
+                          color: 'var(--steel-blue)',
+                          fontWeight: '700',
+                        }}>
+                          {String(payment.method).replace('_', ' ').toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: '600' }}>{payment.transactionReference}</div>
+                        {payment.payerDetails && (
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{payment.payerDetails}</span>
+                        )}
+                      </td>
+                      <td style={styles.td}>
+                        <span style={{ fontSize: '0.82rem' }}>{new Date(payment.createdAt).toLocaleString()}</span>
+                      </td>
+                      <td style={styles.td}>
+                        <span style={{
+                          ...styles.statusBadge,
+                          backgroundColor: getStatusBadgeColor(payment.status) + '15',
+                          color: getStatusBadgeColor(payment.status),
+                        }}>
+                          {payment.status}
+                        </span>
+                        {payment.status === 'rejected' && payment.reviewNote && (
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>{payment.reviewNote}</div>
+                        )}
+                      </td>
+                      <td style={styles.td}>
+                        {payment.status === 'pending' ? (
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <button
+                              onClick={() => handlePaymentApprove(payment._id, payment.companyId?.name || 'this company')}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                border: 'none',
+                                borderRadius: '4px',
+                                padding: '0.4rem 0.75rem',
+                                fontSize: '0.8rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                color: '#ffffff',
+                                backgroundColor: 'var(--success-green)',
+                              }}
+                            >
+                              <CheckCircle2 size={14} />
+                              <span>Approve</span>
+                            </button>
+                            <button
+                              onClick={() => handlePaymentReject(payment._id, payment.companyId?.name || 'this company')}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                border: 'none',
+                                borderRadius: '4px',
+                                padding: '0.4rem 0.75rem',
+                                fontSize: '0.8rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                color: '#ffffff',
+                                backgroundColor: 'var(--alert-red)',
+                              }}
+                            >
+                              <XCircle size={14} />
+                              <span>Reject</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                            {payment.reviewedAt ? `Reviewed ${new Date(payment.reviewedAt).toLocaleDateString()}` : '-'}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
       </div>

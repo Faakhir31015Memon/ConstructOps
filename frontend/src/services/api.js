@@ -60,8 +60,35 @@ export const getSubscriptionStatus = async () => {
   return data;
 };
 
-export const renewSubscription = async (plan) => {
-  const { data } = await API.post('/subscription/renew', { plan });
+export const getSubscriptionPlans = async () => {
+  const { data } = await API.get('/subscription/plans');
+  return data;
+};
+
+export const submitSubscriptionPayment = async (paymentData) => {
+  const { data } = await API.post('/subscription/payment', paymentData);
+  return data;
+};
+
+export const getMyPayments = async () => {
+  const { data } = await API.get('/subscription/payments');
+  return data;
+};
+
+// --- ADMIN SUBSCRIPTION PAYMENT VERIFICATION ---
+export const getAllSubscriptionPayments = async (status = '') => {
+  const url = status ? `/subscription/admin/payments?status=${status}` : '/subscription/admin/payments';
+  const { data } = await API.get(url);
+  return data;
+};
+
+export const approveSubscriptionPayment = async (id, reviewNote = '') => {
+  const { data } = await API.put(`/subscription/admin/payments/${id}/approve`, { reviewNote });
+  return data;
+};
+
+export const rejectSubscriptionPayment = async (id, reviewNote = '') => {
+  const { data } = await API.put(`/subscription/admin/payments/${id}/reject`, { reviewNote });
   return data;
 };
 

@@ -8,11 +8,18 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [infoMsg, setInfoMsg] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('payment') === 'pending'
+      ? 'Payment submitted successfully! You will be able to log in as soon as the admin approves your payment.'
+      : '';
+  });
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setInfoMsg('');
     setLoading(true);
 
     try {
@@ -69,6 +76,13 @@ const Login = () => {
           <div style={styles.errorBox}>
             <AlertCircle size={18} />
             <span>{error}</span>
+          </div>
+        )}
+
+        {infoMsg && !error && (
+          <div style={styles.infoBox}>
+            <AlertCircle size={18} />
+            <span>{infoMsg}</span>
           </div>
         )}
 
@@ -185,6 +199,19 @@ const styles = {
     fontSize: '0.85rem',
     marginBottom: '1.25rem',
     border: '1px solid rgba(235, 87, 87, 0.1)',
+  },
+  infoBox: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '0.5rem',
+    padding: '0.75rem 1rem',
+    backgroundColor: '#fffbeb',
+    color: '#92400e',
+    borderRadius: 'var(--radius-sm)',
+    fontSize: '0.85rem',
+    marginBottom: '1.25rem',
+    border: '1px solid #fde68a',
+    lineHeight: 1.4,
   },
   footerLink: {
     textAlign: 'center',

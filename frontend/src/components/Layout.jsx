@@ -40,11 +40,16 @@ const Layout = ({ title }) => {
     setPlansModalOpen(false);
   };
 
+  const handlePaymentSubmitted = () => {
+    fetchSubscription();
+  };
+
   if (!token) {
     return null; // Prevents flashing content while redirecting
   }
 
   const isExpired = subscription?.isExpired;
+  const isPaymentPending = Boolean(subscription?.pendingPayment);
 
   return (
     <div className="app-layout">
@@ -76,8 +81,32 @@ const Layout = ({ title }) => {
         />
 
         <main className="main-content-scroll">
-          {/* If expired, restrict workspace view and guide to reactivation */}
-          {isExpired ? (
+          {/* If expired or payment awaiting approval, restrict workspace view */}
+          {isPaymentPending && !isExpired ? (
+            <div style={styles.expiredLockContainer}>
+              <div style={styles.lockCard}>
+                <div style={styles.lockBadge}>⏳</div>
+                <h2 style={styles.lockTitle}>Payment Under Verification</h2>
+                <p style={styles.lockDesc}>
+                  Your {subscription.pendingPayment.method?.replace('_', ' ').toUpperCase()} payment of Rs{' '}
+                  {Number(subscription.pendingPayment.amount).toLocaleString('en-PK')} for the{' '}
+                  {subscription.pendingPayment.plan.replace('_', ' ')} plan has been received.
+                  Your workspace and login are locked until the ConstructOps admin approves your payment.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login?payment=pending';
+                  }}
+                  style={styles.reactivateMainBtn}
+                >
+                  🔐 Go to Login Screen
+                </button>
+              </div>
+            </div>
+          ) : isExpired ? (
             <div style={styles.expiredLockContainer}>
               <div style={styles.lockCard}>
                 <div style={styles.lockBadge}>🔒</div>
@@ -112,6 +141,7 @@ const Layout = ({ title }) => {
         onClose={() => setPlansModalOpen(false)}
         subscription={subscription}
         onSubscriptionUpdated={handleSubscriptionUpdated}
+        onPaymentSubmitted={handlePaymentSubmitted}
         isExpiredLock={Boolean(isExpired)}
       />
     </div>

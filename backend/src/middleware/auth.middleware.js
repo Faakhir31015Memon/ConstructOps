@@ -49,25 +49,38 @@ export const protect = async (req, res, next) => {
         const subDetails = getCompanySubscriptionDetails(req.user.companyId);
         req.subscription = subDetails;
 
-        if (subDetails.isExpired) {
+        if (subDetails.isExpired && req.user.status !== 'pending_payment') {
           // Sync database status
           if (req.user.companyId.subscriptionStatus !== 'expired') {
             await Company.findByIdAndUpdate(req.user.companyId._id, { subscriptionStatus: 'expired' });
           }
           if (req.user.status !== 'banned') {
             await User.findByIdAndUpdate(req.user._id, { status: 'banned' });
+            req.user.status = 'banned';
           }
 
-          // Allow subscription routes to execute so user can check status and renew/reactivate
+          // Allow subscription routes to execute so user can check status and pay to reactivate
           const isSubscriptionRoute = req.originalUrl.includes('/api/v1/subscription') || req.originalUrl.includes('/api/v1/auth/me');
           if (!isSubscriptionRoute) {
             return res.status(403).json({
               success: false,
               subscriptionExpired: true,
-              message: 'Your 15-day trial or plan has ended. Your account is temporarily suspended. Please reactivate your plan to restore access.',
+              message: 'Your 15-day trial or plan has ended. Your account is temporarily suspended. Please submit a payment to reactivate your plan.',
               subscription: subDetails,
             });
           }
+        }
+      }
+
+      // Payment submitted but not yet approved by admin: only subscription/auth routes allowed
+      if (req.user.status === 'pending_payment') {
+        const isAllowedRoute = req.originalUrl.includes('/api/v1/subscription') || req.originalUrl.includes('/api/v1/auth/me');
+        if (!isAllowedRoute) {
+          return res.status(403).json({
+            success: false,
+            paymentPending: true,
+            message: 'Your payment is under verification. Access will be restored once the admin approves your payment.',
+          });
         }
       }
 

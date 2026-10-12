@@ -110,6 +110,15 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
+    // If payment submitted but not yet approved by admin, block login
+    if (user.status === 'pending_payment') {
+      return res.status(403).json({
+        success: false,
+        paymentPending: true,
+        message: 'Your payment is under verification. You will be able to log in once the admin approves your payment.',
+      });
+    }
+
     // Check subscription details
     let subscription = null;
     if (user.companyId) {
