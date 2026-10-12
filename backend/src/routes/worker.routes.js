@@ -16,16 +16,16 @@ router.use(protect);
 // Worker Profiles
 router
   .route('/')
-  .post(authorize('owner', 'manager'), addWorker)
+  .post(authorize('owner', 'manager', 'contractor'), addWorker)
   .get(getWorkers);
 
 router
   .route('/:id')
-  .put(authorize('owner', 'manager'), updateWorker)
-  .delete(authorize('owner', 'manager'), deleteWorker);
+  .put(authorize('owner', 'manager', 'contractor'), updateWorker)
+  .delete(authorize('owner', 'manager', 'contractor'), deleteWorker);
 
 // Attendance sheets
-router.post('/attendance/check-in', authorize('owner', 'manager'), checkInAttendance);
+router.post('/attendance/check-in', authorize('owner', 'manager', 'contractor'), checkInAttendance);
 router.get('/attendance', getAttendance);
 
 export default router;

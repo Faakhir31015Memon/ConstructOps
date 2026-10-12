@@ -13,7 +13,7 @@ router.use(protect);
 
 router
   .route('/')
-  .post(authorize('owner', 'manager'), addMaterial)
+  .post(authorize('owner', 'manager', 'contractor'), addMaterial)
   .get(getMaterials);
 
 router.post('/log', authorize('owner', 'manager', 'contractor'), logMaterialTransaction);
