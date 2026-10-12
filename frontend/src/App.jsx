@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Dashboard from './pages/Dashboard';
+import Contractors from './pages/Contractors';
 
 const HomeRedirect = () => {
   const token = localStorage.getItem('token');
@@ -34,6 +35,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
+          <Route path="/contractors" element={<Contractors />} />
         </Route>
 
         {/* Fallback routes */}

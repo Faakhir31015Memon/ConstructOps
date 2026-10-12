@@ -8,7 +8,8 @@ import {
   DollarSign, 
   Bell, 
   Settings, 
-  LogOut 
+  LogOut,
+  HardHat
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -95,6 +96,20 @@ const Sidebar = () => {
           <Briefcase size={20} />
           <span>{user?.role === 'contractor' ? 'My Assigned Projects' : 'Projects'}</span>
         </NavLink>
+
+        {/* Contractor Management — Owner & Manager Only */}
+        {user && (user.role === 'owner' || user.role === 'manager') && (
+          <NavLink 
+            to="/contractors" 
+            style={({ isActive }) => ({
+              ...styles.menuItem,
+              ...(isActive ? styles.activeMenuItem : {})
+            })}
+          >
+            <HardHat size={20} />
+            <span>Contractors</span>
+          </NavLink>
+        )}
       </div>
 
       {/* Footer Logout Button */}
