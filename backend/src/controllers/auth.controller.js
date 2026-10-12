@@ -2,15 +2,16 @@ import getSecret from '../config/jwt.js';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
 import Company from '../models/company.model.js';
+import { getCompanySubscriptionDetails } from '../utils/subscription.util.js';
 
 // Helper to generate JWT token
 const generateToken = (id) => {
   return jwt.sign({ id }, getSecret(), {
-    expiresIn: '1h',
+    expiresIn: '7d',
   });
 };
 
-// @desc    Register a new user and company
+// @desc    Register a new user and company (with 15-day free trial)
 // @route   POST /api/v1/auth/register
 // @access  Public
 export const registerUser = async (req, res) => {
@@ -34,10 +35,20 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
 
-    // Create Company first
+    // Create Company first with 15-day free trial
+    const trialDays = 15;
+    const now = new Date();
+    const trialEndDate = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+
     const company = await Company.create({
       name: companyName,
-      subscriptionPlan: 'pro',
+      subscriptionPlan: 'trial',
+      subscriptionStatus: 'active',
+      subscriptionStartDate: now,
+      subscriptionEndDate: trialEndDate,
+      trialStartDate: now,
+      trialEndDate: trialEndDate,
+      isTrial: true,
     });
 
     // Create Owner user linked to company
@@ -47,7 +58,10 @@ export const registerUser = async (req, res) => {
       password,
       role: 'owner', // Default role for registering user is owner
       companyId: company._id,
+      status: 'active',
     });
+
+    const subscription = getCompanySubscriptionDetails(company);
 
     if (user) {
       res.status(201).json({
@@ -60,6 +74,8 @@ export const registerUser = async (req, res) => {
           role: user.role,
           companyId: user.companyId,
           companyName: company.name,
+          status: user.status,
+          subscription,
         },
       });
     } else {
@@ -88,26 +104,48 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    if (user.status === 'banned') {
+    // Verify password first
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    // Check subscription details
+    let subscription = null;
+    if (user.companyId) {
+      subscription = getCompanySubscriptionDetails(user.companyId);
+      if (subscription.isExpired) {
+        // Mark company as expired and user banned if not already
+        if (user.companyId.subscriptionStatus !== 'expired') {
+          user.companyId.subscriptionStatus = 'expired';
+          await user.companyId.save();
+        }
+        if (user.status !== 'banned') {
+          user.status = 'banned';
+          await user.save();
+        }
+      }
+    }
+
+    // If banned by admin and NOT due to plan expiration, block completely
+    if (user.status === 'banned' && (!subscription || !subscription.isExpired)) {
       return res.status(403).json({ success: false, message: 'Your account has been deactivated/banned by the System Admin.' });
     }
 
-    if (await user.comparePassword(password)) {
-      res.json({
-        success: true,
-        token: generateToken(user._id),
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          companyId: user.companyId?._id,
-          companyName: user.companyId?.name,
-        },
-      });
-    } else {
-      res.status(401).json({ success: false, message: 'Invalid email or password' });
-    }
+    res.json({
+      success: true,
+      token: generateToken(user._id),
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        companyId: user.companyId?._id,
+        companyName: user.companyId?.name,
+        status: user.status,
+        subscription,
+      },
+    });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
@@ -121,6 +159,7 @@ export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate('companyId');
     if (user) {
+      const subscription = user.companyId ? getCompanySubscriptionDetails(user.companyId) : null;
       res.json({
         success: true,
         user: {
@@ -130,6 +169,8 @@ export const getMe = async (req, res) => {
           role: user.role,
           companyId: user.companyId?._id,
           companyName: user.companyId?.name,
+          status: user.status,
+          subscription,
         },
       });
     } else {

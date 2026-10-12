@@ -54,6 +54,18 @@ export const getMe = async () => {
   return data;
 };
 
+// --- SUBSCRIPTION API METHODS ---
+export const getSubscriptionStatus = async () => {
+  const { data } = await API.get('/subscription/status');
+  return data;
+};
+
+export const renewSubscription = async (plan) => {
+  const { data } = await API.post('/subscription/renew', { plan });
+  return data;
+};
+
+
 // --- PROJECT API METHODS ---
 export const getProjects = async () => {
   const { data } = await API.get('/projects');

@@ -16,6 +16,7 @@ import dashboardRoutes from './routes/dashboard.routes.js';
 import userRoutes from './routes/user.routes.js';
 import contractorRoutes from './routes/contractor.routes.js';
 import exportRoutes from './routes/export.routes.js';
+import subscriptionRoutes from './routes/subscription.routes.js';
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/contractors', contractorRoutes);
 app.use('/api/v1/export', exportRoutes);
+app.use('/api/v1/subscription', subscriptionRoutes);
 
 // Error Handling Middleware
 app.use((req, res, next) => {

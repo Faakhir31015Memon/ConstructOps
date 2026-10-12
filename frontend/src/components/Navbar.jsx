@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, Briefcase, Check, Menu } from 'lucide-react';
+import { Bell, Briefcase, Check, Menu, Clock, AlertCircle, Zap } from 'lucide-react';
 import { getAlerts, markAlertRead } from '../services/api';
 
-const Navbar = ({ title, onToggleSidebar }) => {
+const Navbar = ({ title, onToggleSidebar, subscription, onOpenPlans }) => {
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
 
@@ -57,6 +57,63 @@ const Navbar = ({ title, onToggleSidebar }) => {
       </div>
 
       <div className="navbar-right">
+        {/* Subscription Plan Badge */}
+        {subscription && (
+          <button
+            type="button"
+            onClick={onOpenPlans}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              fontSize: '0.8rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              border: subscription.isExpired
+                ? '1px solid #f87171'
+                : subscription.isExpiringSoon
+                ? '1px solid #fcd34d'
+                : '1px solid #cbd5e1',
+              backgroundColor: subscription.isExpired
+                ? '#fef2f2'
+                : subscription.isExpiringSoon
+                ? '#fffbeb'
+                : '#f8fafc',
+              color: subscription.isExpired
+                ? '#dc2626'
+                : subscription.isExpiringSoon
+                ? '#b45309'
+                : '#334155',
+              transition: 'all 0.2s ease',
+            }}
+            title="Click to view or upgrade subscription plan"
+          >
+            {subscription.isExpired ? (
+              <>
+                <AlertCircle size={15} color="#dc2626" />
+                <span>Expired (Reactivate)</span>
+              </>
+            ) : subscription.isExpiringSoon ? (
+              <>
+                <Clock size={15} color="#b45309" />
+                <span>{subscription.daysRemaining}d left (Renew)</span>
+              </>
+            ) : subscription.isTrial ? (
+              <>
+                <Clock size={15} color="#ff6b00" />
+                <span>15d Trial ({subscription.daysRemaining}d left)</span>
+              </>
+            ) : (
+              <>
+                <Zap size={15} color="#ff6b00" />
+                <span>{subscription.plan.replace('_', ' ').toUpperCase()} ({subscription.daysRemaining}d left)</span>
+              </>
+            )}
+          </button>
+        )}
+
         {user && user.companyName && (
           <div className="navbar-company-badge">
             <Briefcase size={16} />
