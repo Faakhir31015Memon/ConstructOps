@@ -9,6 +9,7 @@ const LINE = '#D1D5DB';
 
 const MAX_PDF_IMAGES = 24;
 const MAX_PDF_BYTES = 8 * 1024 * 1024;
+const MAX_PAGES = 120;
 
 const SUPPORTED = /^[\x20-\x7E¡-ÿ€–—‘’“”•…¬±°©®™×÷]+$/;
 
@@ -85,6 +86,7 @@ class PdfReport {
   }
 
   ensure(height) {
+    if (this.pageCount >= MAX_PAGES) return;
     if (this.doc.y + height > this.bottom) this.doc.addPage();
   }
 
@@ -564,6 +566,10 @@ export async function buildExportPdf(data) {
 
   const chunks = [];
   doc.on('data', (chunk) => chunks.push(chunk));
+  const finished = new Promise((resolve, reject) => {
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+  });
 
   const report = new PdfReport(doc, notes);
   report.headerText = `ConstructOps - ${data.title}`;
@@ -578,10 +584,6 @@ export async function buildExportPdf(data) {
   else renderCompany(doc, report, data);
   const noteLines = report.finalize();
 
-  const buffer = await new Promise((resolve, reject) => {
-    doc.on('end', () => resolve(Buffer.concat(chunks)));
-    doc.on('error', reject);
-  });
-
+  const buffer = await finished;
   return { buffer, warnings: noteLines };
 }
