@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0-rc1] - 2026-10-12
+### Downloadable Reports
+- **Added:** Excel + PDF export of the full project detail — contractors with their assigned projects, contract/budget amounts, paid vs balance and milestones, materials in/out/remaining with the movement log, day-by-day daily reports, worker names, roles, daily wages, present/absent days and payable wages, expenses, contractor payments, and alerts.
+  - `backend/src/services/exportData.js` — single data bundle used by both formats and both scopes (access control lives here, not in the callers).
+  - `backend/src/services/exportWorkbook.js` — ExcelJS writer (per-section sheets + embedded site photos).
+  - `backend/src/services/exportPdf.js` — PDFKit writer (A4 landscape, photo blocks).
+- **Added:** Site photos attached by contractors are embedded in both formats when stored as data URIs; projects with no images export normally without them.
+- **Added:** Endpoints `GET /api/v1/export/projects/:id/:format` and `GET /api/v1/export/company/:format` (see `API_DOCUMENTATION.md` §6).
+- **Added:** `frontend/src/components/ExportButtons.jsx` — Excel/PDF download pair wired into the owner's company dashboard (all projects) and each project detail page.
+- **Security:** Tenant isolation is enforced per bundle (`canAccessProject`); a contractor can only export projects they are assigned to. Remote image URLs are never fetched server-side.
+
+### Repository Layout
+- **Changed:** Repo root now holds only `frontend/` and `backend/`. The Vercel catch-all, `vercel.json`, `docs/`, and `.planning/` moved under `backend/`; the wrapper root `package.json` was removed and its scripts folded into `backend/package.json`.
+
+---
+
 ## [1.0.0-rc1] - 2026-10-11
 ### Security & Tenant Hardening
 - **Fixed:** Eliminated insecure fallback JWT secret in `auth.middleware.js` and `auth.controller.js`. System now aborts server boot if `JWT_SECRET` is not set.

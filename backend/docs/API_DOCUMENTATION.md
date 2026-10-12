@@ -128,3 +128,36 @@
 - **Access:** Private (`owner`, `manager`)
 - **Fields:** `projectId`, `materialId`, `type` (`IN` | `OUT`), `quantity`, `note`.
 - **Auditing:** Adjusts stock levels; automatically flags high severity alerts if balance drops into negative discrepancy.
+
+---
+
+## 6. Report Exports (`/export`)
+
+Both endpoints stream a generated file instead of the standard JSON shape, so error responses are the only JSON payloads on these routes.
+
+### 6.1 Full Project Report
+- **GET** `/export/projects/:id/:format`
+- **Access:** `owner`, `manager`, `accountant` of the project's company; `contractor` only with an active `ProjectAssignment`; admin bypass. Route guard: `protect` + `checkProjectAccess()`.
+- **`format`:** `xlsx` | `pdf` (anything else → `400`).
+- **Contents (Excel, one sheet per section):** Summary, Contractors, Milestones, Labour, Attendance, Materials, Material movement, Expenses, Contractor payments, Daily reports, Site Photos, Alerts, Export notes.
+- **Contents (PDF, A4 landscape):** same data as narrative sections plus photo blocks.
+
+### 6.2 Company-Wide Report
+- **GET** `/export/company/:format`
+- **Access:** Private (`protect`); scoped to the caller's own company — an owner gets every project in the company, a contractor only their assigned ones.
+- **Sheets:** Summary, Projects, Contractor to project, Milestones, Workers, Materials, Expenses, Contractor payments, Daily reports.
+
+### 6.3 Response Headers
+```
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet | application/pdf
+Content-Length: <bytes>
+Content-Disposition: attachment; filename="<slug>-<YYYY-MM-DD>.<ext>"; filename*=UTF-8''<same>
+Cache-Control: no-store
+X-Export-Warnings: <count>
+```
+
+### 6.4 Known Export Limits
+- Site photos are embedded only when stored as base64 data URIs (`png`/`jpg`/`gif`). Remote `http(s)` image links are listed as hyperlinks, never fetched server-side (SSRF avoidance).
+- Embed ceilings: 12 MB / 80 images per workbook; 8 MB / 24 images per PDF; PDF hard-caps at 120 pages. Skipped items are reported in the "Export notes" sheet and `X-Export-Warnings`.
+- The PDF uses WinAnsi standard fonts, so non-Latin script (e.g. Urdu descriptions) is replaced by a `[N non-Latin characters - full text in the Excel file]` marker. Excel keeps the original text.
+- Projects with no daily reports or no images export normally with those sections empty.

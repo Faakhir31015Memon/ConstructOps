@@ -514,3 +514,62 @@ button, input, select, textarea {
   }
 }
 
+/* Page Header & Tabs Responsive Adaptations */
+.project-header-responsive {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.project-header-stats-responsive {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.tabs-container-responsive {
+  display: flex;
+  border-bottom: 2px solid var(--border-color);
+  gap: 1.5rem;
+  margin-top: -1rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+
+@media (max-width: 900px) {
+  .project-header-responsive {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .project-header-stats-responsive {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    border-top: 1px dashed var(--border-color);
+    padding-top: 1rem;
+  }
+
+  .project-header-stats-responsive .headerStatBox {
+    align-items: flex-start !important;
+  }
+
+  .tabs-container-responsive {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .project-header-stats-responsive {
+    grid-template-columns: 1fr;
+  }
+}
+
+

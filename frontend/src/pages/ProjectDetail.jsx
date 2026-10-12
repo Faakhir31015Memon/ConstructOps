@@ -460,7 +460,7 @@ const ProjectDetail = () => {
   return (
     <div style={styles.container}>
       {/* Project Meta Header */}
-      <div style={styles.projectHeader}>
+      <div style={styles.projectHeader} className="project-header-responsive">
         <div>
           <span style={styles.subText}>{dashboardData.location}</span>
           <h1 style={styles.projectTitle}>{dashboardData.projectName}</h1>
@@ -468,7 +468,7 @@ const ProjectDetail = () => {
             <ExportButtons projectId={id} label="Download full project detail (Excel / PDF)" />
           </div>
         </div>
-        <div style={styles.projectHeaderStats}>
+        <div style={styles.projectHeaderStats} className="project-header-stats-responsive">
           <div style={styles.headerStatBox}>
             <span style={styles.headerStatLabel}>Approved Spent</span>
             <span style={styles.headerStatValue}>
@@ -513,7 +513,7 @@ const ProjectDetail = () => {
       </div>
 
       {/* Tabs Menu */}
-      <div style={styles.tabsContainer}>
+      <div style={styles.tabsContainer} className="tabs-container-responsive">
         <button 
           onClick={() => handleTabChange('overview')} 
           style={{...styles.tabButton, ...(activeTab === 'overview' ? styles.activeTabButton : {})}}
