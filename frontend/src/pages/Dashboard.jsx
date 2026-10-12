@@ -132,6 +132,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('projects');
+  const storedUser = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch(e) { return null; } })();
 
   const fetchDashboardData = async () => {
     try {
@@ -142,9 +143,15 @@ const Dashboard = () => {
         setError(res.message || 'Error loading dashboard metrics');
       }
 
-      const usersRes = await getUsers();
-      if (usersRes.success) {
-        setUsersList(usersRes.users);
+      if (storedUser && storedUser.role === 'admin') {
+        try {
+          const usersRes = await getUsers();
+          if (usersRes?.success) {
+            setUsersList(usersRes.users);
+          }
+        } catch (uErr) {
+          console.warn('Non-admin user cannot access system users list');
+        }
       }
     } catch (err) {
       console.error(err);

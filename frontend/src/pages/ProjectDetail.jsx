@@ -570,8 +570,24 @@ const ProjectDetail = () => {
                 <span>Total Spent</span>
                 <DollarSign size={20} style={{color: 'var(--primary-orange)'}} />
               </div>
-              <h3>Rs {dashboardData.spent.toLocaleString()}</h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Outflow</span>
+              <h3 style={{
+                color: (user?.role === 'contractor' && dashboardData.totalPendingAmount > 0)
+                  ? '#f39c12'
+                  : '#ffffff'
+              }}>
+                Rs {dashboardData.spent.toLocaleString()}
+              </h3>
+              <span style={{
+                fontSize: '0.75rem',
+                color: (user?.role === 'contractor' && dashboardData.totalPendingAmount > 0)
+                  ? '#f39c12'
+                  : 'var(--text-muted)',
+                fontWeight: (user?.role === 'contractor' && dashboardData.totalPendingAmount > 0) ? '600' : 'normal'
+              }}>
+                {user?.role === 'contractor' && dashboardData.totalPendingAmount > 0
+                  ? `(Rs ${dashboardData.totalPendingAmount.toLocaleString()} Pending Approval)`
+                  : 'Approved Total Outflow'}
+              </span>
             </div>
 
             <div className="card" style={styles.metricCard}>
@@ -988,7 +1004,25 @@ const ProjectDetail = () => {
                         <td>
                           <span className={`badge badge-info`}>{exp.category}</span>
                         </td>
-                        <td><strong>{exp.amount.toLocaleString()}</strong></td>
+                        <td>
+                          <strong style={{
+                            color: exp.status === 'pending'
+                              ? '#f39c12'
+                              : exp.status === 'approved'
+                                ? '#ffffff'
+                                : 'var(--alert-red)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem'
+                          }}>
+                            Rs {exp.amount.toLocaleString()}
+                            {exp.status === 'pending' && (
+                              <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', backgroundColor: 'rgba(243, 156, 18, 0.15)', borderRadius: '4px' }}>
+                                Pending
+                              </span>
+                            )}
+                          </strong>
+                        </td>
                         <td>
                           <div>{exp.description}</div>
                           {exp.rejectionReason && (
