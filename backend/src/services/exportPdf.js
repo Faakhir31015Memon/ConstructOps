@@ -91,6 +91,7 @@ class PdfReport {
   }
 
   section(title) {
+    console.error('TRACE section', title);
     this.ensure(46);
     const doc = this.doc;
     this.space(6);
@@ -143,6 +144,7 @@ class PdfReport {
       doc.y = y + 17;
     };
 
+    console.error('TRACE table', this.rows_label=arguments.callee);
     drawHeader();
 
     rows.forEach((row, index) => {
@@ -178,6 +180,7 @@ class PdfReport {
   }
 
   photoBlock(reports) {
+    console.error('TRACE photos');
     const doc = this.doc;
     let embedded = 0;
     let bytes = 0;
@@ -220,6 +223,7 @@ class PdfReport {
           break;
         }
         try {
+          console.error('TRACE openImage');
           const size = doc.openImage(image.buffer);
           const scale = Math.min(slotWidth / size.width, 180 / size.height, 1);
           const drawWidth = size.width * scale;
@@ -263,6 +267,7 @@ class PdfReport {
     if (this.notes.imageCap) notes.push('PDF image limit reached; remaining photos are available in the Excel export and in the app.');
     if (this.notes.badImage) notes.push(`One image could not be decoded: ${this.notes.badImage}`);
 
+    console.error('TRACE finalize pages', doc.bufferedPageRange().count);
     for (let page = 1; page <= doc.bufferedPageRange().count; page += 1) {
       doc.switchToPage(page - 1);
       doc.font('Helvetica').fontSize(7).fillColor(MUTED);
