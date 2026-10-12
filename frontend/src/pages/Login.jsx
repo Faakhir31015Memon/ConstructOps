@@ -17,7 +17,8 @@ const Login = () => {
 
     try {
       let data;
-      if (email === 'constops@admin.com') {
+      const cleanEmail = (email || '').trim().toLowerCase();
+      if (cleanEmail === 'constops@admin.com') {
         data = await loginAdmin(email, password);
       } else {
         data = await login(email, password);

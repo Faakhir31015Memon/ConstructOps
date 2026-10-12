@@ -146,12 +146,13 @@ export const getMe = async (req, res) => {
 export const adminLogin = (req, res) => {
   const { email, password } = req.body;
 
+  const normalizedEmail = (email || '').trim().toLowerCase();
   const ADMIN_EMAIL = 'constops@admin.com';
-  const ADMIN_PASSWORD = 'constops@access.com';
+  const validPasswords = ['constops@access.com', 'ConstOps@access.com'];
 
-  if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+  if (normalizedEmail === ADMIN_EMAIL && validPasswords.includes(password)) {
     const token = jwt.sign(
-      { role: 'admin', email },
+      { role: 'admin', email: ADMIN_EMAIL },
       getSecret(),
       { expiresIn: '1d' }
     );
