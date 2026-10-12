@@ -46,10 +46,10 @@ const Register = () => {
             <rect x="80" y="35" width="6" height="30" fill="#1E1E1E"/>
             <rect x="90" y="40" width="6" height="20" fill="#1E1E1E"/>
             {/* Text */}
-            <text x="120" y="62" font-family="Poppins, Arial, sans-serif" font-size="36" fill="#1E1E1E" font-weight="700">
+            <text x="120" y="62" fontFamily="Poppins, Arial, sans-serif" fontSize="36" fill="#1E1E1E" fontWeight="700">
               Construct
             </text>
-            <text x="310" y="62" font-family="Poppins, Arial, sans-serif" font-size="36" fill="#FF6B00" font-weight="800">
+            <text x="310" y="62" fontFamily="Poppins, Arial, sans-serif" fontSize="36" fill="#FF6B00" fontWeight="800">
               Ops
             </text>
           </svg>
