@@ -16,7 +16,7 @@ router
   .post(authorize('owner', 'manager'), addMaterial)
   .get(getMaterials);
 
-router.post('/log', authorize('owner', 'manager'), logMaterialTransaction);
+router.post('/log', authorize('owner', 'manager', 'contractor'), logMaterialTransaction);
 router.get('/logs', getMaterialLogs);
 
 export default router;
