@@ -61,6 +61,7 @@ const AssistantChat = () => {
   const inputRef = useRef(null);
   const bottomRef = useRef(null);
   const recognitionRef = useRef(null);
+  const transcriptRef = useRef('');
   const speakSeq = useRef(0);
 
   useEffect(() => {
@@ -71,11 +72,10 @@ const AssistantChat = () => {
     inputRef.current?.focus();
   }, [open, suggestions.length, lang]);
 
-  // Re-fetch starter questions when the assistant language changes.
-  useEffect(() => {
-    if (!open) return;
-    getAssistantSuggestions(lang).then((res) => setSuggestions(res.suggestions || [])).catch(() => {});
-  }, [lang, open]);
+  // Starter questions follow the assistant language.
+  const reloadSuggestions = useCallback((nextLang) => {
+    getAssistantSuggestions(nextLang).then((res) => setSuggestions(res.suggestions || [])).catch(() => {});
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(historyKey(), JSON.stringify(messages.slice(-12)));
@@ -149,15 +149,13 @@ const AssistantChat = () => {
     rec.interimResults = true;
     rec.continuous = false;
     rec.maxAlternatives = 1;
-    let finalText = '';
     rec.onresult = (event) => {
-      let interim = '';
+      let text = '';
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const chunk = event.results[i][0].transcript;
-        if (event.results[i].isFinal) finalText += chunk;
-        else interim += chunk;
+        text += event.results[i][0].transcript;
       }
-      setInput((finalText || interim).trim());
+      transcriptRef.current = text.trim();
+      setInput(transcriptRef.current);
     };
     rec.onerror = (event) => {
       setListening(false);
@@ -169,18 +167,14 @@ const AssistantChat = () => {
     };
     rec.onend = () => {
       setListening(false);
-      const spokenText = inputRef.current?.value?.trim() || finalTextRef.current;
-      if (spokenText) {
-        finalTextRef.current = '';
-        send(spokenText, true);
-      }
+      const asked = transcriptRef.current;
+      transcriptRef.current = '';
+      if (asked) send(asked, true);
     };
-    finalTextRef.current = '';
     recognitionRef.current = rec;
     setListening(true);
     rec.start();
   };
-  const finalTextRef = useRef('');
 
   const reset = () => {
     stopSpeaking();
@@ -192,6 +186,7 @@ const AssistantChat = () => {
     stopSpeaking();
     setSuggestions([]);
     setLang(next);
+    reloadSuggestions(next);
   };
 
   const panelDir = dir;
