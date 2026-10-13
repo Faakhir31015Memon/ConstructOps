@@ -7,6 +7,7 @@ import {
   assignContractor,
   revokeContractor,
 } from '../services/api';
+import { useLang } from '../i18n/LanguageContext';
 import {
   UserPlus,
   Users,
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 
 const Contractors = () => {
+  const { t } = useLang();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
 
@@ -231,7 +233,7 @@ const Contractors = () => {
         <Search size={18} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
         <input
           type="text"
-          placeholder="Search contractors by name or email..."
+          placeholder={t('Search contractors by name or email...')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={styles.searchInput}
@@ -314,7 +316,7 @@ const Contractors = () => {
                         <button
                           onClick={() => handleRevokeFromProject(contractor._id, proj._id, proj.name)}
                           style={styles.revokeTagBtn}
-                          title="Revoke access"
+                          title={t('Revoke access')}
                         >
                           <ShieldOff size={12} />
                         </button>
@@ -371,7 +373,7 @@ const Contractors = () => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="e.g. Ahmed Khan"
+                  placeholder={t('e.g. Ahmed Khan')}
                   value={cName}
                   onChange={(e) => setCName(e.target.value)}
                   required
@@ -393,7 +395,7 @@ const Contractors = () => {
                 <input
                   type="password"
                   className="form-control"
-                  placeholder="Set a strong password"
+                  placeholder={t('Set a strong password')}
                   value={cPassword}
                   onChange={(e) => setCPassword(e.target.value)}
                   required

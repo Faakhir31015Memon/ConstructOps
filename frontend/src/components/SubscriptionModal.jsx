@@ -14,6 +14,7 @@ import {
   Hourglass
 } from 'lucide-react';
 import { submitSubscriptionPayment, getSubscriptionPlans, getPakBanks } from '../services/api';
+import { useLang } from '../i18n/LanguageContext';
 
 const PLANS = [
   {
@@ -83,6 +84,7 @@ const SubscriptionModal = ({
   onPaymentSubmitted,
   isExpiredLock = false
 }) => {
+  const { t } = useLang();
   const [step, setStep] = useState('plan'); // plan | pay | done
   const [selectedPlan, setSelectedPlan] = useState('6_months');
   const [selectedMethod, setSelectedMethod] = useState('easypaisa');
@@ -383,7 +385,7 @@ const SubscriptionModal = ({
             <label>Card Holder Name</label>
             <input
               className="form-control"
-              placeholder="Name printed on card"
+              placeholder={t('Name printed on card')}
               value={cardHolderName}
               onChange={(e) => setCardHolderName(e.target.value)}
             />
@@ -392,7 +394,7 @@ const SubscriptionModal = ({
             <label>Card Number</label>
             <input
               className="form-control"
-              placeholder="XXXX XXXX XXXX XXXX"
+              placeholder={t('XXXX XXXX XXXX XXXX')}
               inputMode="numeric"
               maxLength={19}
               value={cardNumber}
@@ -415,7 +417,7 @@ const SubscriptionModal = ({
             <label>Account Title</label>
             <input
               className="form-control"
-              placeholder="Account holder name as printed on cheque"
+              placeholder={t('Account holder name as printed on cheque')}
               value={accountTitle}
               onChange={(e) => setAccountTitle(e.target.value)}
             />
@@ -424,7 +426,7 @@ const SubscriptionModal = ({
             <label>Account Number <span style={{ color: '#94a3b8', fontWeight: '400' }}>(or IBAN — koi ek zaroori hai)</span></label>
             <input
               className="form-control"
-              placeholder="e.g. 1234567890"
+              placeholder={t('e.g. 1234567890')}
               inputMode="numeric"
               value={accountNumber}
               onChange={(e) => setAccountNumber(e.target.value)}
@@ -434,7 +436,7 @@ const SubscriptionModal = ({
             <label>IBAN <span style={{ color: '#94a3b8', fontWeight: '400' }}>(optional)</span></label>
             <input
               className="form-control"
-              placeholder="e.g. PK36SCBL0000001123456702"
+              placeholder={t('e.g. PK36SCBL0000001123456702')}
               maxLength={34}
               value={iban}
               onChange={(e) => setIban(e.target.value.toUpperCase())}
@@ -444,7 +446,7 @@ const SubscriptionModal = ({
             <label>Transaction / UTR Reference Number</label>
             <input
               className="form-control"
-              placeholder="e.g. UTR-123456789"
+              placeholder={t('e.g. UTR-123456789')}
               value={transactionId}
               onChange={(e) => setTransactionId(e.target.value)}
             />
@@ -455,7 +457,7 @@ const SubscriptionModal = ({
           <label>Transaction ID (TID)</label>
           <input
             className="form-control"
-            placeholder="e.g. TID-1234567890"
+            placeholder={t('e.g. TID-1234567890')}
             value={transactionId}
             onChange={(e) => setTransactionId(e.target.value)}
           />
