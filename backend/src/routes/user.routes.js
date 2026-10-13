@@ -1,6 +1,9 @@
 import express from 'express';
 import { protect, verifyAdmin } from '../middleware/auth.middleware.js';
 import User from '../models/user.model.js';
+import Expense from '../models/expense.model.js';
+import DailyReport from '../models/dailyReport.model.js';
+import ProjectAssignment from '../models/projectAssignment.model.js';
 import { deleteCompanyData } from '../services/cascadeDelete.service.js';
 
 const router = express.Router();
@@ -19,11 +22,11 @@ router.get('/', protect, verifyAdmin, async (req, res) => {
   }
 });
 
-// PUT ban/deactivate user + delete ALL their company data (Admin only)
+// PUT ban/deactivate/reactivate user + delete all their projects & budgets (Admin only)
 router.put('/:id/status', protect, verifyAdmin, async (req, res) => {
   const { status } = req.body;
 
-  if (!['active', 'banned'].includes(status)) {
+  if (!['active', 'banned', 'deactivated'].includes(status)) {
     return res.status(400).json({ success: false, message: 'Invalid status value' });
   }
 
@@ -34,27 +37,29 @@ router.put('/:id/status', protect, verifyAdmin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // When banning: cascade delete all projects, budgets, workers, expenses, etc.
-    if (status === 'banned' && user.companyId) {
-      // Delete all company data (projects, workers, expenses, materials, alerts, reports, etc.)
-      // but keep the user record itself (just marked as banned)
+    // When banning or deactivating: cascade delete all projects, budgets, workers, expenses, etc.
+    if ((status === 'banned' || status === 'deactivated') && user.companyId) {
       await deleteCompanyData(user.companyId, {
-        deleteCompany: true,   // remove company record
-        deleteUsers: false,    // keep the user so admin can see them in the list
+        deleteCompany: false,   // keep company container so companyId stays valid
+        deleteUsers: false,     // keep the user in the list marked as banned/deactivated
       });
-
-      // Clear companyId since company was deleted
-      user.companyId = undefined;
     }
+
+    // Also remove any directly assigned projects, expenses, or reports for this user
+    await Promise.allSettled([
+      ProjectAssignment.deleteMany({ userId: user._id }),
+      Expense.deleteMany({ addedBy: user._id }),
+      DailyReport.deleteMany({ contractorId: user._id }),
+    ]);
 
     user.status = status;
     await user.save();
 
     res.json({
       success: true,
-      message: status === 'banned'
-        ? 'User banned and all associated company data deleted successfully'
-        : 'User reactivated successfully',
+      message: (status === 'banned' || status === 'deactivated')
+        ? 'User has been banned and all associated projects & budget data removed.'
+        : 'User reactivated successfully.',
       user,
     });
   } catch (error) {
@@ -62,7 +67,7 @@ router.put('/:id/status', protect, verifyAdmin, async (req, res) => {
   }
 });
 
-// DELETE user + all their company data completely (Admin only)
+// DELETE user + all their company data completely (Admin only - Deactivate & Clear)
 router.delete('/:id', protect, verifyAdmin, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -76,12 +81,17 @@ router.delete('/:id', protect, verifyAdmin, async (req, res) => {
     if (companyId) {
       // Wipe everything: company, all projects, all related data, all users of the company
       await deleteCompanyData(companyId, { deleteCompany: true, deleteUsers: true });
-    } else {
-      // No company — just delete the user
-      await user.deleteOne();
     }
 
-    res.json({ success: true, message: 'User and all associated data deleted successfully' });
+    // Remove user and user-specific references
+    await Promise.allSettled([
+      ProjectAssignment.deleteMany({ userId: user._id }),
+      Expense.deleteMany({ addedBy: user._id }),
+      DailyReport.deleteMany({ contractorId: user._id }),
+      User.findByIdAndDelete(req.params.id),
+    ]);
+
+    res.json({ success: true, message: 'User and all associated data completely deleted successfully.' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }

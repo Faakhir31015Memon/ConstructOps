@@ -28,11 +28,11 @@ const userSchema = new mongoose.Schema(
     companyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Company',
-      required: true,
+      required: false,
     },
     status: {
       type: String,
-      enum: ['active', 'banned', 'pending_payment'],
+      enum: ['active', 'banned', 'deactivated', 'pending_payment'],
       default: 'active',
     },
     language: {
