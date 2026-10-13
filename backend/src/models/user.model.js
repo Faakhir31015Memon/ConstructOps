@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { LANGUAGE_CODES, DEFAULT_LANGUAGE } from '../config/languages.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -36,8 +37,8 @@ const userSchema = new mongoose.Schema(
     },
     language: {
       type: String,
-      enum: ['en', 'latn-ur', 'arab-ur'],
-      default: 'latn-ur',
+      enum: LANGUAGE_CODES,
+      default: DEFAULT_LANGUAGE,
     },
   },
   {

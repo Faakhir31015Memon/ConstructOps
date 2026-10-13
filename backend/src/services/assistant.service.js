@@ -5,18 +5,16 @@ import Alert from '../models/alert.model.js';
 import Worker from '../models/worker.model.js';
 import ProjectAssignment from '../models/projectAssignment.model.js';
 import { getCompanySubscriptionDetails } from '../utils/subscription.util.js';
+import { SUPPORTED_LANGUAGES, languageMeta, DEFAULT_LANGUAGE } from '../config/languages.js';
 
 const CAPS = { projects: 25, expenses: 10, alerts: 6, myExpenses: 10 };
 
-// UI/assistant languages. speechLocale drives browser voice (Web Speech API).
-export const LANGUAGES = {
-  en: { label: 'English', speechLocale: 'en-US' },
-  'latn-ur': { label: 'Roman Urdu', speechLocale: 'ur-PK' },
-  'arab-ur': { label: 'اردو (Urdu)', speechLocale: 'ur-PK' },
-};
-const LANG_NAME = { en: 'English', 'latn-ur': 'Roman Urdu', 'arab-ur': 'Urdu (Urdu script)' };
+export const LANGUAGES = Object.fromEntries(
+  SUPPORTED_LANGUAGES.map(({ code, label, speechLocale, dir }) => [code, { label, speechLocale, dir }])
+);
+const LANG_NAME = Object.fromEntries(SUPPORTED_LANGUAGES.map((l) => [l.code, l.llmName]));
 
-export const normalizeLang = (lang) => (LANGUAGES[lang] ? lang : 'latn-ur');
+export const normalizeLang = (lang) => languageMeta(lang).code;
 
 // Status-wise tracking stats for any project list (company-wide OR a
 // contractor's assigned subset — whatever the caller is allowed to see).
@@ -172,7 +170,7 @@ ${JSON.stringify(context)}`;
 
 export const llmAvailable = () => Boolean(process.env.ASSISTANT_API_KEY);
 
-export const answerWithLLM = async ({ messages, context, lang = 'latn-ur' }) => {
+export const answerWithLLM = async ({ messages, context, lang = DEFAULT_LANGUAGE }) => {
   const baseUrl = (process.env.ASSISTANT_API_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
@@ -369,7 +367,7 @@ const PHRASES = {
   },
 };
 
-const P = (lang) => PHRASES[lang] || PHRASES['latn-ur'];
+const P = (lang) => PHRASES[normalizeLang(lang)];
 
 // Returns projects whose name appears in the question (single- or multi-word).
 const mentionedProjects = (q, list = []) =>
@@ -416,7 +414,7 @@ const statusLine = (context, t) => {
 // "kitne workers hajir hain aur total expenses kitni hui" get one combined answer.
 // Every connective word comes from the phrase table, so the answer language
 // follows the user's selection instead of the language they typed in.
-export const answerWithKnowledge = (question, context, lang = 'latn-ur') => {
+export const answerWithKnowledge = (question, context, lang = DEFAULT_LANGUAGE) => {
   const q = String(question || '').toLowerCase().trim();
   const t = P(normalizeLang(lang));
   const greeted = has(q, 'salam', 'assalam', 'asslamo', 'aslamo', 'السلام', 'سلام', 'ہیلو', 'hello', 'hi ', 'hey', 'namaste');
@@ -557,7 +555,7 @@ export const answerWithKnowledge = (question, context, lang = 'latn-ur') => {
   return answers.join('\n\n');
 };
 
-export const roleSuggestions = (role, lang = 'latn-ur') => {
+export const roleSuggestions = (role, lang = DEFAULT_LANGUAGE) => {
   const l = normalizeLang(lang);
   const map = {
     contractor: {

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
 import Company from '../models/company.model.js';
 import { getCompanySubscriptionDetails } from '../utils/subscription.util.js';
+import { LANGUAGE_CODES, DEFAULT_LANGUAGE } from '../config/languages.js';
 
 // Helper to generate JWT token
 const generateToken = (id) => {
@@ -191,6 +192,19 @@ export const getMe = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }
+};
+
+// @desc    Save the interface/assistant language for the signed-in user
+// @route   PATCH /api/v1/auth/language
+// @access  Private
+export const updateLanguage = async (req, res) => {
+  const { language } = req.body;
+  if (!LANGUAGE_CODES.includes(language)) {
+    return res.status(400).json({ success: false, message: `language must be one of: ${LANGUAGE_CODES.join(', ')}` });
+  }
+  const user = await User.findByIdAndUpdate(req.user._id, { language }, { new: true });
+  if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+  res.json({ success: true, language: user.language });
 };
 
 // @desc    Admin authentication & login
