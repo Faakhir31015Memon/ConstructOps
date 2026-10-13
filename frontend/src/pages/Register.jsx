@@ -20,7 +20,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const data = await register(name, email, password, companyName, lang);
+      const data = await register(name, email, password, companyName, 'en');
       if (data.success) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
@@ -65,9 +65,6 @@ const Register = () => {
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-          <LanguageSelect tone="light" />
-        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
