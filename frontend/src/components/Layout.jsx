@@ -6,9 +6,11 @@ import SubscriptionBanner from './SubscriptionBanner';
 import SubscriptionModal from './SubscriptionModal';
 import AssistantChat from './AssistantChat';
 import { getSubscriptionStatus } from '../services/api';
+import { useLang } from '../i18n/LanguageContext';
 
 const Layout = ({ title }) => {
   const navigate = useNavigate();
+  const { t } = useLang();
   const token = localStorage.getItem('token');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [subscription, setSubscription] = useState(null);
@@ -91,12 +93,13 @@ const Layout = ({ title }) => {
             <div style={styles.expiredLockContainer}>
               <div style={styles.lockCard}>
                 <div style={styles.lockBadge}>⏳</div>
-                <h2 style={styles.lockTitle}>Payment Under Verification</h2>
+                <h2 style={styles.lockTitle}>{t('Payment Under Verification')}</h2>
                 <p style={styles.lockDesc}>
-                  Your {subscription.pendingPayment.method?.replace('_', ' ').toUpperCase()} payment of Rs{' '}
-                  {Number(subscription.pendingPayment.amount).toLocaleString('en-PK')} for the{' '}
-                  {subscription.pendingPayment.plan.replace('_', ' ')} plan has been received.
-                  Your workspace and login are locked until the ConstructOps admin approves your payment.
+                  {t('Your {method} payment of Rs {amount} for the {plan} plan has been received. Your workspace and login are locked until the ConstructOps admin approves your payment.', {
+                    method: subscription.pendingPayment.method?.replace('_', ' ').toUpperCase(),
+                    amount: Number(subscription.pendingPayment.amount).toLocaleString('en-PK'),
+                    plan: subscription.pendingPayment.plan.replace('_', ' '),
+                  })}
                 </p>
                 <button
                   type="button"
@@ -107,7 +110,7 @@ const Layout = ({ title }) => {
                   }}
                   style={styles.reactivateMainBtn}
                 >
-                  🔐 Go to Login Screen
+                  🔐 {t('Go to Login Screen')}
                 </button>
               </div>
             </div>
@@ -115,22 +118,21 @@ const Layout = ({ title }) => {
             <div style={styles.expiredLockContainer}>
               <div style={styles.lockCard}>
                 <div style={styles.lockBadge}>🔒</div>
-                <h2 style={styles.lockTitle}>Workspace Suspended</h2>
+                <h2 style={styles.lockTitle}>{t('Workspace Suspended')}</h2>
                 <p style={styles.lockDesc}>
-                  Your 15-day free trial or ConstructOps subscription plan has ended.
-                  Your account and team access have been paused until a plan is reactivated.
+                  {t('Your 15-day free trial or ConstructOps subscription plan has ended. Your account and team access have been paused until a plan is reactivated.')}
                 </p>
                 <div style={styles.planBadgesSummary}>
-                  <div style={styles.summaryBadge}>15-Day Trial (Ended)</div>
+                  <div style={styles.summaryBadge}>{t('15-Day Trial (Ended)')}</div>
                   <div style={styles.summaryArrow}>➔</div>
-                  <div style={styles.summaryTarget}>Choose 1, 6, or 12 Month Plan</div>
+                  <div style={styles.summaryTarget}>{t('Choose 1, 6, or 12 Month Plan')}</div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setPlansModalOpen(true)}
                   style={styles.reactivateMainBtn}
                 >
-                  ⚡ Reactivate ConstructOps Now
+                  ⚡ {t('Reactivate ConstructOps Now')}
                 </button>
               </div>
             </div>

@@ -12,9 +12,12 @@ import {
   HardHat,
   X
 } from 'lucide-react';
+import { useLang } from '../i18n/LanguageContext';
+import LanguageSelect from './LanguageSelect';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
+  const { t } = useLang();
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
 
@@ -80,7 +83,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             })}
           >
             <LayoutDashboard size={20} />
-            <span>Admin Dashboard</span>
+            <span>{t('Admin Dashboard')}</span>
           </NavLink>
         )}
 
@@ -94,7 +97,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             })}
           >
             <LayoutDashboard size={20} />
-            <span>Company Dashboard</span>
+            <span>{t('Company Dashboard')}</span>
           </NavLink>
         )}
 
@@ -106,7 +109,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           })}
         >
           <Briefcase size={20} />
-          <span>{user?.role === 'contractor' ? 'My Assigned Projects' : 'Projects'}</span>
+          <span>{user?.role === 'contractor' ? t('My Assigned Projects') : t('Projects')}</span>
         </NavLink>
 
         {/* Contractor Management — Owner & Manager Only */}
@@ -119,15 +122,20 @@ const Sidebar = ({ isOpen, onClose }) => {
             })}
           >
             <HardHat size={20} />
-            <span>Contractors</span>
+            <span>{t('Contractors')}</span>
           </NavLink>
         )}
+      </div>
+
+      {/* Interface language */}
+      <div style={{ ...styles.menuItem, padding: '0.5rem 0.75rem', marginBottom: '0.5rem', cursor: 'default' }}>
+        <LanguageSelect />
       </div>
 
       {/* Footer Logout Button */}
       <button onClick={handleLogout} style={styles.logoutBtn}>
         <LogOut size={20} />
-        <span>Log Out</span>
+        <span>{t('Log Out')}</span>
       </button>
     </aside>
   );

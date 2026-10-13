@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, Briefcase, Check, Menu, Clock, AlertCircle, Zap } from 'lucide-react';
 import { getAlerts, markAlertRead } from '../services/api';
+import { useLang } from '../i18n/LanguageContext';
+import LanguageSelect from './LanguageSelect';
 
 const Navbar = ({ title, onToggleSidebar, subscription, onOpenPlans }) => {
+  const { t } = useLang();
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
 
@@ -53,7 +56,7 @@ const Navbar = ({ title, onToggleSidebar, subscription, onOpenPlans }) => {
             <Menu size={22} />
           </button>
         )}
-        <h2 className="navbar-title">{title || 'ConstructOps Dashboard'}</h2>
+        <h2 className="navbar-title">{t(title || 'ConstructOps Dashboard')}</h2>
       </div>
 
       <div className="navbar-right">
@@ -93,22 +96,22 @@ const Navbar = ({ title, onToggleSidebar, subscription, onOpenPlans }) => {
             {subscription.isExpired ? (
               <>
                 <AlertCircle size={15} color="#dc2626" />
-                <span>Expired (Reactivate)</span>
+                <span>{t('Expired (Reactivate)')}</span>
               </>
             ) : subscription.isExpiringSoon ? (
               <>
                 <Clock size={15} color="#b45309" />
-                <span>{subscription.daysRemaining}d left (Renew)</span>
+                <span>{t('{days}d left (Renew)', { days: subscription.daysRemaining })}</span>
               </>
             ) : subscription.isTrial ? (
               <>
                 <Clock size={15} color="#ff6b00" />
-                <span>15d Trial ({subscription.daysRemaining}d left)</span>
+                <span>{t('15d Trial ({days}d left)', { days: subscription.daysRemaining })}</span>
               </>
             ) : (
               <>
                 <Zap size={15} color="#ff6b00" />
-                <span>{subscription.plan.replace('_', ' ').toUpperCase()} ({subscription.daysRemaining}d left)</span>
+                <span>{subscription.plan.replace('_', ' ').toUpperCase()} ({t('{days}d left', { days: subscription.daysRemaining })})</span>
               </>
             )}
           </button>
@@ -131,12 +134,12 @@ const Navbar = ({ title, onToggleSidebar, subscription, onOpenPlans }) => {
           {showDropdown && (
             <div style={styles.dropdown}>
               <div style={styles.dropdownHeader}>
-                <span style={styles.dropdownTitle}>Alert Notifications</span>
-                {unreadCount > 0 && <span style={styles.unreadBadge}>{unreadCount} new</span>}
+                <span style={styles.dropdownTitle}>{t('Alert Notifications')}</span>
+                {unreadCount > 0 && <span style={styles.unreadBadge}>{t('{n} new', { n: unreadCount })}</span>}
               </div>
               <div style={styles.dropdownList}>
                 {alerts.length === 0 ? (
-                  <div style={styles.emptyState}>No notifications logged recently</div>
+                  <div style={styles.emptyState}>{t('No notifications logged recently')}</div>
                 ) : (
                   alerts.map((alert) => (
                     <div 
@@ -151,7 +154,7 @@ const Navbar = ({ title, onToggleSidebar, subscription, onOpenPlans }) => {
                           {alert.message}
                         </div>
                         <span style={styles.projectLabel}>
-                          Project: {alert.projectId?.name || 'ConstructOps System'}
+                          {t('Project')}: {alert.projectId?.name || t('ConstructOps System')}
                         </span>
                       </div>
                       {!alert.isRead && (
@@ -171,10 +174,14 @@ const Navbar = ({ title, onToggleSidebar, subscription, onOpenPlans }) => {
           )}
         </div>
 
+        <div className="navbar-language">
+          <LanguageSelect tone="light" />
+        </div>
+
         <div style={styles.profileSection}>
           <div style={styles.divider}></div>
           <div style={styles.details}>
-            <span style={styles.name}>{user ? user.name : 'User'}</span>
+            <span style={styles.name}>{user ? user.name : t('User')}</span>
             <span style={styles.role}>{user ? user.role.toUpperCase() : ''}</span>
           </div>
         </div>
