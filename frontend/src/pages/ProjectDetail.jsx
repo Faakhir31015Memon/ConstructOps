@@ -962,7 +962,7 @@ const ProjectDetail = () => {
                         <td><strong>{log.materialId?.name}</strong></td>
                         <td>
                           <span className={`badge ${log.type === 'IN' ? 'badge-success' : 'badge-danger'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                            {log.type === 'IN' ? <ArrowDownLeft size={12} />{t(' : ')}<ArrowUpRight size={12} />}
+                            {log.type === 'IN' ? <ArrowDownLeft size={12} /> : <ArrowUpRight size={12} />}
                             {log.type}
                           </span>
                         </td>

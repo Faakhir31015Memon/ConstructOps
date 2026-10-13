@@ -11,7 +11,9 @@ import {
   LogOut,
   HardHat,
   X
+} from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
+import LanguageSelect from './LanguageSelect';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
