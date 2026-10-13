@@ -426,7 +426,7 @@ const SubscriptionModal = ({
             <label>{t('Account Number ')}<span style={{ color: '#94a3b8', fontWeight: '400' }}>(or IBAN — koi ek zaroori hai)</span></label>
             <input
               className="form-control"
-              placeholder=e.g. 1234567890
+              placeholder="e.g. 1234567890"
               inputMode="numeric"
               value={accountNumber}
               onChange={(e) => setAccountNumber(e.target.value)}
