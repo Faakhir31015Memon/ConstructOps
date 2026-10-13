@@ -5,7 +5,7 @@ import { Lock, Mail, AlertCircle } from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
 
 const Login = () => {
-  const { t } = useLang();
+  const { t, setLang } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

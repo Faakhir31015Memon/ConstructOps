@@ -7,6 +7,14 @@ import connectDB from './src/config/db.js';
 
 const PORT = process.env.PORT || 5000;
 
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 // Connect to database
 connectDB().catch(err => {
   console.error('Failed to connect to MongoDB:', err);
@@ -26,7 +34,6 @@ const shutdown = (signal) => {
       process.exit(0);
     }
   });
-  // Force exit if connections refuse to drain.
   setTimeout(() => process.exit(1), 10000).unref();
 };
 
