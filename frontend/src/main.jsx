@@ -5,8 +5,10 @@ import { LanguageProvider } from './i18n/LanguageContext.jsx';
 import { initAntiInspect } from './utils/antiInspect.js';
 import './index.css';
 
-// Activate security protections against DevTools / Inspect
-initAntiInspect();
+// Activate security protections against DevTools / Inspect (production only)
+if (import.meta.env.PROD) {
+  initAntiInspect();
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
