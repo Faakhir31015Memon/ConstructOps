@@ -16,7 +16,7 @@ const generateToken = (id) => {
 // @route   POST /api/v1/auth/register
 // @access  Public
 export const registerUser = async (req, res) => {
-  const { name, email, password, companyName } = req.body;
+  const { name, email, password, companyName, language } = req.body;
 
   try {
     // Basic validation – all fields required
@@ -60,6 +60,7 @@ export const registerUser = async (req, res) => {
       role: 'owner', // Default role for registering user is owner
       companyId: company._id,
       status: 'active',
+      language: LANGUAGE_CODES.includes(language) ? language : DEFAULT_LANGUAGE,
     });
 
     const subscription = getCompanySubscriptionDetails(company);

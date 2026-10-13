@@ -44,13 +44,18 @@ export const login = async (email, password) => {
   return data;
 };
 
-export const register = async (name, email, password, companyName) => {
-  const { data } = await API.post('/auth/register', { name, email, password, companyName });
+export const register = async (name, email, password, companyName, language) => {
+  const { data } = await API.post('/auth/register', { name, email, password, companyName, language });
   return data;
 };
 
 export const getMe = async () => {
   const { data } = await API.get('/auth/me');
+  return data;
+};
+
+export const saveLanguage = async (language) => {
+  const { data } = await API.patch('/auth/language', { language });
   return data;
 };
 
@@ -87,13 +92,18 @@ export const getGatewayStatus = async () => {
 };
 
 // --- AI ASSISTANT API METHODS ---
-export const sendAssistantMessage = async (messages) => {
-  const { data } = await API.post('/assistant/chat', { messages });
+export const sendAssistantMessage = async (messages, lang) => {
+  const { data } = await API.post('/assistant/chat', { messages, lang });
   return data;
 };
 
-export const getAssistantSuggestions = async () => {
-  const { data } = await API.get('/assistant/suggestions');
+export const getAssistantSuggestions = async (lang) => {
+  const { data } = await API.get(`/assistant/suggestions?lang=${encodeURIComponent(lang)}`);
+  return data;
+};
+
+export const getAssistantVoiceConfig = async (lang) => {
+  const { data } = await API.get(`/assistant/voice-config?lang=${encodeURIComponent(lang)}`);
   return data;
 };
 
