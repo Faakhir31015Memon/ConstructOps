@@ -11,9 +11,7 @@ import {
   LogOut,
   HardHat,
   X
-} from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
-import LanguageSelect from './LanguageSelect';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
@@ -127,10 +125,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         )}
       </div>
 
-      {/* Interface language */}
-      <div style={{ ...styles.menuItem, padding: '0.5rem 0.75rem', marginBottom: '0.5rem', cursor: 'default' }}>
-        <LanguageSelect />
-      </div>
+
 
       {/* Footer Logout Button */}
       <button onClick={handleLogout} style={styles.logoutBtn}>
