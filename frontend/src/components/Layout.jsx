@@ -4,7 +4,6 @@ import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import SubscriptionBanner from './SubscriptionBanner';
 import SubscriptionModal from './SubscriptionModal';
-import AssistantChat from './AssistantChat';
 import { getSubscriptionStatus } from '../services/api';
 import { useLang } from '../i18n/LanguageContext';
 
@@ -152,8 +151,6 @@ const Layout = ({ title }) => {
         isExpiredLock={Boolean(isExpired)}
       />
 
-      {/* Floating AI assistant for company users (not system admin) */}
-      {!isAdmin && <AssistantChat />}
     </div>
   );
 };

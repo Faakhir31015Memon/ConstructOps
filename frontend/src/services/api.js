@@ -102,10 +102,6 @@ export const getAssistantSuggestions = async (lang) => {
   return data;
 };
 
-export const getAssistantVoiceConfig = async (lang) => {
-  const { data } = await API.get(`/assistant/voice-config?lang=${encodeURIComponent(lang)}`);
-  return data;
-};
 
 // --- ADMIN SUBSCRIPTION PAYMENT VERIFICATION ---
 export const getAllSubscriptionPayments = async (status = '') => {

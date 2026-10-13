@@ -39,8 +39,6 @@ import {
   Calendar, 
   Check, 
   Camera, 
-  Mic, 
-  MicOff, 
   CheckCircle, 
   UserPlus, 
   Package, 
@@ -119,16 +117,7 @@ const ProjectDetail = () => {
   const [rWorkType, setRWorkType] = useState('Foundation');
   const [rImages, setRImages] = useState([]);
   
-  // Voice Input Simulation
-  const [isRecording, setIsRecording] = useState(false);
-  const [selectedUrduPhrase, setSelectedUrduPhrase] = useState('');
-  const urduPhrases = [
-    { urdu: "Aaj slab complete ho gaya hai.", eng: "Slab structure completed successfully today." },
-    { urdu: "20 cement ki boriyaan aayi hain.", eng: "20 bags of cement delivered and logged into stock." },
-    { urdu: "Kaam slow hai kyun ke barish ho rahi hai.", eng: "Work progress is slow today due to heavy rain interruptions on site." },
-    { urdu: "10 mazdoor absent thay aaj.", eng: "10 workers were absent today, affecting overall daily output." },
-    { urdu: "Foundation ka khodai ka kaam shuru ho gaya.", eng: "Foundation excavation work has been started today." }
-  ];
+
 
   const fetchDashboard = async () => {
     try {
@@ -1753,50 +1742,16 @@ const ProjectDetail = () => {
         </div>
       )}
 
-      {/* 5. Daily Site Report Modal (with Urdu Voice Input Simulation) */}
+      {/* 5. Daily Site Report Modal */}
       {showReportModal && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '850px', width: '90%' }}>
-            <h2>{t('Daily Work Log & Vision AI Upload')}</h2>
+          <div className="modal-content" style={{ maxWidth: '580px', width: '90%' }}>
+            <h2>{t('Daily Work Log')}</h2>
             <button onClick={() => setShowReportModal(false)} className="modal-close">×</button>
             
-            <div style={{ display: 'flex', gap: '2rem', marginTop: '1.5rem', flexWrap: 'wrap', alignItems: 'stretch' }}>
-              {/* Left Column: Voice Assistant */}
-              <div style={{ flex: '1 1 320px', backgroundColor: 'var(--bg-light)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <Mic size={18} style={{ color: 'var(--primary-orange)' }} />
-                  <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-                    {t('Urdu Voice Assistant (Smart Site Entry)')}
-                  </h4>
-                </div>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: '1.4' }}>
-                  Choose a Roman Urdu site log description. The AI translator will convert it to formatted English logs automatically.
-                </p>
-                
-                <div style={styles.voiceButtonsList}>
-                  {urduPhrases.map((phrase, idx) => (
-                    <button 
-                      key={idx} 
-                      type="button" 
-                      onClick={() => handleVoiceSimulate(phrase)} 
-                      style={styles.voiceSimBtn}
-                      disabled={isRecording}
-                    >
-                      "{phrase.urdu}"
-                    </button>
-                  ))}
-                </div>
-
-                {isRecording && (
-                  <div style={styles.recordingState}>
-                    <span style={styles.recordingPulse}></span>
-                    <span>Transcribing Voice Memo: "{selectedUrduPhrase}"</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Right Column: Form */}
-              <form onSubmit={handleAddReportSubmit} style={{ flex: '1 2 420px', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: 0 }}>
+            <div style={{ marginTop: '1.5rem' }}>
+              {/* Form */}
+              <form onSubmit={handleAddReportSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label>{t('Work Stage / Type')}</label>
                   <select 
@@ -2189,48 +2144,7 @@ const styles = {
     fontWeight: '600',
     marginTop: 'auto',
   },
-  voiceAssistantBox: {
-    backgroundColor: 'var(--bg-light)',
-    border: '1px solid var(--border-color)',
-    borderRadius: 'var(--radius-md)',
-    padding: '1.25rem',
-    marginBottom: '1rem',
-  },
-  voiceButtonsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-  },
-  voiceSimBtn: {
-    textAlign: 'left',
-    background: 'var(--bg-white)',
-    border: '1px solid var(--border-color)',
-    padding: '0.5rem 0.75rem',
-    borderRadius: 'var(--radius-sm)',
-    fontSize: '0.8rem',
-    cursor: 'pointer',
-    color: 'var(--dark-graphite-text)',
-    transition: 'border-color var(--transition-fast)',
-    ':hover': {
-      borderColor: 'var(--primary-orange)',
-    },
-  },
-  recordingState: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    marginTop: '0.75rem',
-    fontSize: '0.8rem',
-    color: 'var(--primary-orange)',
-    fontWeight: '600',
-  },
-  recordingPulse: {
-    width: '10px',
-    height: '10px',
-    borderRadius: '50%',
-    backgroundColor: 'var(--primary-orange)',
-    animation: 'fadeIn 0.5s infinite alternate',
-  },
+
   tabErrorAlert: {
     backgroundColor: 'var(--alert-red-light)',
     color: 'var(--alert-red)',
