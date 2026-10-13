@@ -34,6 +34,11 @@ const userSchema = new mongoose.Schema(
       enum: ['active', 'banned', 'pending_payment'],
       default: 'active',
     },
+    language: {
+      type: String,
+      enum: ['en', 'latn-ur', 'arab-ur'],
+      default: 'latn-ur',
+    },
   },
   {
     timestamps: true,

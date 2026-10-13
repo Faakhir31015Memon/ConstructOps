@@ -60,7 +60,7 @@ export const protect = async (req, res, next) => {
           }
 
           // Allow subscription routes to execute so user can check status and pay to reactivate
-          const isSubscriptionRoute = req.originalUrl.includes('/api/v1/subscription') || req.originalUrl.includes('/api/v1/auth/me');
+          const isSubscriptionRoute = req.originalUrl.includes('/api/v1/subscription') || req.originalUrl.includes('/api/v1/auth/me') || req.originalUrl.includes('/api/v1/auth/language');
           if (!isSubscriptionRoute) {
             return res.status(403).json({
               success: false,

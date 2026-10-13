@@ -75,6 +75,7 @@ export const registerUser = async (req, res) => {
           companyId: user.companyId,
           companyName: company.name,
           status: user.status,
+          language: user.language,
           subscription,
         },
       });
@@ -152,6 +153,7 @@ export const loginUser = async (req, res) => {
         companyId: user.companyId?._id,
         companyName: user.companyId?.name,
         status: user.status,
+        language: user.language,
         subscription,
       },
     });
@@ -179,6 +181,7 @@ export const getMe = async (req, res) => {
           companyId: user.companyId?._id,
           companyName: user.companyId?.name,
           status: user.status,
+          language: user.language,
           subscription,
         },
       });

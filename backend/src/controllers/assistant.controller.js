@@ -1,4 +1,6 @@
 import {
+  LANGUAGES,
+  normalizeLang,
   buildAssistantContext,
   answerWithLLM,
   answerWithKnowledge,
@@ -38,21 +40,22 @@ export const assistantChat = async (req, res) => {
       return res.status(400).json({ success: false, message: `messages array required (max ${MAX_MESSAGES} turns, ${MAX_CONTENT_LENGTH} chars each).` });
     }
 
+    const lang = normalizeLang(req.body.lang);
     const context = await buildAssistantContext(req.user);
     const lastQuestion = messages[messages.length - 1].content;
 
     if (llmAvailable()) {
       try {
-        const reply = await answerWithLLM({ messages, context });
+        const reply = await answerWithLLM({ messages, context, lang });
         if (reply) {
-          return res.json({ success: true, reply, source: 'llm' });
+          return res.json({ success: true, reply, lang, source: 'llm' });
         }
       } catch (error) {
         console.error('Assistant LLM call failed, using built-in knowledge:', error.message);
       }
     }
 
-    res.json({ success: true, reply: answerWithKnowledge(lastQuestion, context), source: 'knowledge' });
+    res.json({ success: true, reply: answerWithKnowledge(lastQuestion, context, lang), lang, source: 'knowledge' });
   } catch (error) {
     console.error('Assistant chat error:', error);
     res.status(500).json({ success: false, message: 'Assistant is unavailable right now.' });
@@ -63,5 +66,20 @@ export const assistantChat = async (req, res) => {
 // @route   GET /api/v1/assistant/suggestions
 // @access  Private
 export const assistantSuggestions = async (req, res) => {
-  res.json({ success: true, suggestions: roleSuggestions(req.user.role) });
+  res.json({ success: true, suggestions: roleSuggestions(req.user.role, normalizeLang(req.query.lang)) });
+};
+
+// @desc    Languages the assistant can answer/speak in, plus browser voice locales
+// @route   GET /api/v1/assistant/voice-config
+// @access  Private
+export const assistantVoiceConfig = async (req, res) => {
+  const current = normalizeLang(req.query.lang);
+  res.json({
+    success: true,
+    languages: Object.entries(LANGUAGES).map(([code, meta]) => ({ code, ...meta, isCurrent: code === current })),
+    speech: {
+      recognitionLocale: LANGUAGES[current].speechLocale,
+      synthesisLocale: LANGUAGES[current].speechLocale,
+    },
+  });
 };
