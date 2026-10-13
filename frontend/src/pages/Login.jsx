@@ -3,10 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { login, loginAdmin } from '../services/api';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
-import LanguageSelect from '../components/LanguageSelect';
 
 const Login = () => {
-  const { t, setLang } = useLang();
+  const { t } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -91,9 +90,6 @@ const Login = () => {
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-          <LanguageSelect tone="light" />
-        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">

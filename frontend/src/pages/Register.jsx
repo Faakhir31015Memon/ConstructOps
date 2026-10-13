@@ -3,10 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../services/api';
 import { User, Lock, Mail, Building2, AlertCircle } from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
-import LanguageSelect from '../components/LanguageSelect';
 
 const Register = () => {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
