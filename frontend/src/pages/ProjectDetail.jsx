@@ -28,7 +28,6 @@ import {
 } from '../services/api';
 import ExportButtons from '../components/ExportButtons';
 import { 
-import { useLang } from '../i18n/LanguageContext';
   Briefcase, 
   DollarSign, 
   Users, 
@@ -49,6 +48,7 @@ import { useLang } from '../i18n/LanguageContext';
   ArrowUpRight,
   Clock 
 } from 'lucide-react';
+import { useLang } from '../i18n/LanguageContext';
 
 const ProjectDetail = () => {
   const { t } = useLang();

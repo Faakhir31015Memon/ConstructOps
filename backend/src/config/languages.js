@@ -6,7 +6,7 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'arab-ur', label: 'اردو', speechLocale: 'ur-PK', dir: 'rtl', llmName: 'Urdu (Urdu script)' },
 ];
 
-export const DEFAULT_LANGUAGE = 'latn-ur';
+export const DEFAULT_LANGUAGE = 'en';
 
 export const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map((l) => l.code);
 
