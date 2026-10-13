@@ -101,7 +101,30 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide email and password' });
     }
 
-    const user = await User.findOne({ email }).populate('companyId');
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const ADMIN_EMAIL = 'constops@admin.com';
+    const validAdminPasswords = ['constops@access.com', 'ConstOps@access.com'];
+
+    // Direct Admin login support via regular login route
+    if (normalizedEmail === ADMIN_EMAIL && validAdminPasswords.includes(password)) {
+      const token = jwt.sign(
+        { role: 'admin', email: ADMIN_EMAIL },
+        getSecret(),
+        { expiresIn: '1d' }
+      );
+
+      return res.json({
+        success: true,
+        token,
+        user: {
+          email: ADMIN_EMAIL,
+          name: 'System Admin',
+          role: 'admin',
+        },
+      });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail }).populate('companyId');
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
