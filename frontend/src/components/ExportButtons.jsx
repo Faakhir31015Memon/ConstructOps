@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { exportProjectReport, exportCompanyReport, saveBlobToDisk } from '../services/api';
+import { useLang } from '../i18n/LanguageContext';
 
 const FORMATS = [
   { key: 'xlsx', label: 'Excel', Icon: FileSpreadsheet },
@@ -13,6 +14,7 @@ export default function ExportButtons({ projectId, label = 'Full project report'
   const [done, setDone] = useState('');
 
   const handleExport = async (format) => {
+  const { t } = useLang();
     setBusy(format);
     setError('');
     setDone('');

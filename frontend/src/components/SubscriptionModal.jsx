@@ -200,7 +200,7 @@ const SubscriptionModal = ({
           style={styles.activateBtn}
         >
           <Lock size={18} />
-          <span>Go to Login Screen</span>
+          <span>{t('Go to Login Screen')}</span>
         </button>
       </div>
     );
@@ -304,12 +304,12 @@ const SubscriptionModal = ({
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           {!isExpiredLock && onClose && (
             <button type="button" onClick={onClose} style={styles.cancelBtn}>
-              Cancel
+              {t('Cancel')}
             </button>
           )}
           <button type="button" onClick={() => { setError(''); setStep('pay'); }} style={styles.activateBtn}>
             <CreditCard size={18} />
-            <span>Proceed to Payment</span>
+            <span>{t('Proceed to Payment')}</span>
           </button>
         </div>
       </div>
@@ -365,7 +365,7 @@ const SubscriptionModal = ({
       {/* Instructions for selected method */}
       {methodInstruction && (
         <div style={styles.instructionBox}>
-          <div style={{ fontWeight: '600', fontSize: '0.85rem', marginBottom: '4px' }}>How to pay</div>
+          <div style={{ fontWeight: '600', fontSize: '0.85rem', marginBottom: '4px' }}>{t('How to pay')}</div>
           <div style={{ fontSize: '0.83rem', color: '#475569', lineHeight: 1.5 }}>{methodInstruction.description}</div>
           {methodInstruction.accountValue && (
             <div style={styles.accountChip}>{methodInstruction.accountValue}</div>
@@ -382,7 +382,7 @@ const SubscriptionModal = ({
       {selectedMethod === 'card' ? (
         <div style={styles.formGrid}>
           <div className="form-group">
-            <label>Card Holder Name</label>
+            <label>{t('Card Holder Name')}</label>
             <input
               className="form-control"
               placeholder={t('Name printed on card')}
@@ -391,7 +391,7 @@ const SubscriptionModal = ({
             />
           </div>
           <div className="form-group">
-            <label>Card Number</label>
+            <label>{t('Card Number')}</label>
             <input
               className="form-control"
               placeholder={t('XXXX XXXX XXXX XXXX')}
@@ -405,16 +405,16 @@ const SubscriptionModal = ({
       ) : selectedMethod === 'bank_transfer' ? (
         <div style={styles.formGrid}>
           <div className="form-group">
-            <label>Bank (Pakistan)</label>
+            <label>{t('Bank (Pakistan)')}</label>
             <select className="form-control" value={bankName} onChange={(e) => setBankName(e.target.value)}>
-              <option value="">Select bank...</option>
+              <option value="">{t('Select bank...')}</option>
               {banks.map((b) => (
                 <option key={b.code} value={b.name}>{b.name}</option>
               ))}
             </select>
           </div>
           <div className="form-group">
-            <label>Account Title</label>
+            <label>{t('Account Title')}</label>
             <input
               className="form-control"
               placeholder={t('Account holder name as printed on cheque')}
@@ -423,7 +423,7 @@ const SubscriptionModal = ({
             />
           </div>
           <div className="form-group">
-            <label>Account Number <span style={{ color: '#94a3b8', fontWeight: '400' }}>(or IBAN — koi ek zaroori hai)</span></label>
+            <label>{t('Account Number ')}<span style={{ color: '#94a3b8', fontWeight: '400' }}>(or IBAN — koi ek zaroori hai)</span></label>
             <input
               className="form-control"
               placeholder={t('e.g. 1234567890')}
@@ -433,7 +433,7 @@ const SubscriptionModal = ({
             />
           </div>
           <div className="form-group">
-            <label>IBAN <span style={{ color: '#94a3b8', fontWeight: '400' }}>(optional)</span></label>
+            <label>{t('IBAN ')}<span style={{ color: '#94a3b8', fontWeight: '400' }}>{t('(optional)')}</span></label>
             <input
               className="form-control"
               placeholder={t('e.g. PK36SCBL0000001123456702')}
@@ -443,7 +443,7 @@ const SubscriptionModal = ({
             />
           </div>
           <div className="form-group">
-            <label>Transaction / UTR Reference Number</label>
+            <label>{t('Transaction / UTR Reference Number')}</label>
             <input
               className="form-control"
               placeholder={t('e.g. UTR-123456789')}
@@ -454,7 +454,7 @@ const SubscriptionModal = ({
         </div>
       ) : (
         <div className="form-group">
-          <label>Transaction ID (TID)</label>
+          <label>{t('Transaction ID (TID)')}</label>
           <input
             className="form-control"
             placeholder={t('e.g. TID-1234567890')}
@@ -463,7 +463,7 @@ const SubscriptionModal = ({
           />
           {gateway?.gateways?.[selectedMethod]?.live && (
             <div style={{ marginTop: '14px' }}>
-              <label>Apna Mobile Number (wallet checkout ke liye)</label>
+              <label>{t('Apna Mobile Number (wallet checkout ke liye)')}</label>
               <input
                 className="form-control"
                 placeholder="03XX-XXXXXXX"
@@ -490,7 +490,7 @@ const SubscriptionModal = ({
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           {!isExpiredLock && onClose && (
             <button type="button" onClick={onClose} style={styles.cancelBtn} disabled={loading}>
-              Cancel
+              {t('Cancel')}
             </button>
           )}
           {['easypaisa', 'jazzcash'].includes(selectedMethod) && gateway?.gateways?.[selectedMethod]?.live && (

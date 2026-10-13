@@ -1,7 +1,9 @@
 import React from 'react';
 import { AlertTriangle, Clock, ArrowRight, Zap, ShieldAlert } from 'lucide-react';
+import { useLang } from '../i18n/LanguageContext';
 
 const SubscriptionBanner = ({ subscription, onOpenPlans }) => {
+  const { t } = useLang();
   if (!subscription) return null;
 
   const { isExpired, isExpiringSoon, daysRemaining, plan, isTrial } = subscription;
@@ -14,7 +16,7 @@ const SubscriptionBanner = ({ subscription, onOpenPlans }) => {
         <div style={styles.content}>
           <ShieldAlert size={20} color="#ffffff" style={{ flexShrink: 0 }} />
           <div style={styles.textContainer}>
-            <span style={styles.title}>Account Access Suspended:</span>
+            <span style={styles.title}>{t('Account Access Suspended:')}</span>
             <span style={styles.message}>
               Your {isTrial ? '15-day free trial' : 'subscription plan'} has finished. Automatic user restrictions are active. Please reactivate your plan to restore full operations.
             </span>
@@ -26,7 +28,7 @@ const SubscriptionBanner = ({ subscription, onOpenPlans }) => {
           style={styles.expiredBtn}
         >
           <Zap size={16} />
-          <span>Reactivate Account</span>
+          <span>{t('Reactivate Account')}</span>
         </button>
       </div>
     );
@@ -51,7 +53,7 @@ const SubscriptionBanner = ({ subscription, onOpenPlans }) => {
         onClick={onOpenPlans} 
         style={styles.renewBtn}
       >
-        <span>Renew / Extend Plan</span>
+        <span>{t('Renew / Extend Plan')}</span>
         <ArrowRight size={16} />
       </button>
     </div>

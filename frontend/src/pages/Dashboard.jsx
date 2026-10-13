@@ -10,8 +10,10 @@ import {
 } from '../services/api';
 import { Briefcase, Users, Layers, DollarSign, Calendar, Clock, MapPin, User, FileText, Lock, Unlock, Wallet, CheckCircle2, XCircle } from 'lucide-react';
 import ExportButtons from '../components/ExportButtons';
+import { useLang } from '../i18n/LanguageContext';
 
 const SvgBarChart = ({ data }) => {
+  const { t } = useLang();
   const chartHeight = 160;
   const chartWidth = 500;
   const paddingLeft = 40;

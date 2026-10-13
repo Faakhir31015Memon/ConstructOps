@@ -28,6 +28,7 @@ import {
 } from '../services/api';
 import ExportButtons from '../components/ExportButtons';
 import { 
+import { useLang } from '../i18n/LanguageContext';
   Briefcase, 
   DollarSign, 
   Users, 
@@ -50,6 +51,7 @@ import {
 } from 'lucide-react';
 
 const ProjectDetail = () => {
+  const { t } = useLang();
   const { id } = useParams();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
@@ -450,7 +452,7 @@ const ProjectDetail = () => {
     }, 1500);
   };
 
-  if (loading) return <div style={styles.loading}>Loading site workspace...</div>;
+  if (loading) return <div style={styles.loading}>{t('Loading site workspace...')}</div>;
   if (!dashboardData) return <div style={styles.loading}>{tabError || 'No project loaded'}</div>;
 
   const isOwner = user?.role === 'owner';
@@ -470,13 +472,13 @@ const ProjectDetail = () => {
         </div>
         <div style={styles.projectHeaderStats} className="project-header-stats-responsive">
           <div style={styles.headerStatBox}>
-            <span style={styles.headerStatLabel}>Approved Spent</span>
+            <span style={styles.headerStatLabel}>{t('Approved Spent')}</span>
             <span style={styles.headerStatValue}>
               Rs {dashboardData.spent.toLocaleString()} / <span style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>{dashboardData.budget.toLocaleString()}</span>
             </span>
           </div>
           <div style={styles.headerStatBox}>
-            <span style={styles.headerStatLabel}>Pending Due</span>
+            <span style={styles.headerStatLabel}>{t('Pending Due')}</span>
             <span style={{
               ...styles.headerStatValue,
               color: (dashboardData.totalPendingAmount || 0) > 0 ? '#f39c12' : 'var(--text-muted)'
@@ -485,7 +487,7 @@ const ProjectDetail = () => {
             </span>
           </div>
           <div style={styles.headerStatBox}>
-            <span style={styles.headerStatLabel}>Remaining Budget</span>
+            <span style={styles.headerStatLabel}>{t('Remaining Budget')}</span>
             <span style={{
               ...styles.headerStatValue,
               color: (dashboardData.budget - dashboardData.spent) >= 0 ? 'var(--success-green)' : 'var(--alert-red)'
@@ -503,7 +505,7 @@ const ProjectDetail = () => {
                   title="Mark project as completed"
                 >
                   <CheckCircle size={14} />
-                  <span>Complete</span>
+                  <span>{t('Complete')}</span>
                 </button>
               )}
               <span style={styles.headerStatValue}>{dashboardData.progress}%</span>
@@ -573,27 +575,27 @@ const ProjectDetail = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
             <div className="card" style={styles.metricCard}>
               <div style={styles.metricHeader}>
-                <span>Project Budget</span>
+                <span>{t('Project Budget')}</span>
                 <DollarSign size={20} style={{color: 'var(--steel-blue)'}} />
               </div>
               <h3>Rs {dashboardData.budget.toLocaleString()}</h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Allocated</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('Total Allocated')}</span>
             </div>
             
             <div className="card" style={styles.metricCard}>
               <div style={styles.metricHeader}>
-                <span>Approved Spent</span>
+                <span>{t('Approved Spent')}</span>
                 <DollarSign size={20} style={{color: 'var(--primary-orange)'}} />
               </div>
               <h3 style={{ color: 'var(--dark-graphite)' }}>
                 Rs {dashboardData.spent.toLocaleString()}
               </h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Approved Outflow</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('Approved Outflow')}</span>
             </div>
 
             <div className="card" style={{ ...styles.metricCard, borderTop: (dashboardData.totalPendingAmount || 0) > 0 ? '3px solid #f39c12' : '1px solid rgba(0, 0, 0, 0.05)' }}>
               <div style={styles.metricHeader}>
-                <span>Pending Due</span>
+                <span>{t('Pending Due')}</span>
                 <Clock size={20} style={{color: (dashboardData.totalPendingAmount || 0) > 0 ? '#f39c12' : 'var(--text-muted)'}} />
               </div>
               <h3 style={{ color: (dashboardData.totalPendingAmount || 0) > 0 ? '#f39c12' : 'var(--dark-graphite)' }}>
@@ -610,7 +612,7 @@ const ProjectDetail = () => {
 
             <div className="card" style={styles.metricCard}>
               <div style={styles.metricHeader}>
-                <span>Remaining Budget</span>
+                <span>{t('Remaining Budget')}</span>
                 <TrendingUp size={20} style={{color: (dashboardData.budget - dashboardData.spent) >= 0 ? 'var(--success-green)' : 'var(--alert-red)'}} />
               </div>
               <h3 style={{color: (dashboardData.budget - dashboardData.spent) >= 0 ? 'var(--success-green)' : 'var(--alert-red)'}}>
@@ -623,30 +625,30 @@ const ProjectDetail = () => {
 
             <div className="card" style={styles.metricCard}>
               <div style={styles.metricHeader}>
-                <span>Active Labor</span>
+                <span>{t('Active Labor')}</span>
                 <Users size={20} style={{color: 'var(--success-green)'}} />
               </div>
               <h3>{dashboardData.activeWorkers} Workers</h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Checked In Today</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('Checked In Today')}</span>
             </div>
 
             <div className="card" style={styles.metricCard}>
               <div style={styles.metricHeader}>
-                <span>Unread Alerts</span>
+                <span>{t('Unread Alerts')}</span>
                 <AlertTriangle size={20} style={{color: 'var(--alert-red)'}} />
               </div>
               <h3>{dashboardData.alerts.length} Issues</h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Action Required</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('Action Required')}</span>
             </div>
           </div>
 
           <div className="grid grid-2" style={{ marginTop: '2rem' }}>
             {/* Budget Usage Graphic */}
             <div className="card">
-              <h3>Budget Utilization</h3>
+              <h3>{t('Budget Utilization')}</h3>
               <div style={styles.progressBgSection}>
                 <div style={styles.progressLabels}>
-                  <span>Total Spent</span>
+                  <span>{t('Total Spent')}</span>
                   <span>{((dashboardData.spent / dashboardData.budget) * 100).toFixed(1)}% Used</span>
                 </div>
                 <div style={styles.progressBarBg}>
@@ -660,7 +662,7 @@ const ProjectDetail = () => {
 
               {/* Category Breakdown list */}
               <div style={styles.categoryStatsContainer}>
-                <h4>Category Breakdown</h4>
+                <h4>{t('Category Breakdown')}</h4>
                 {[
                   { key: 'material', label: 'Material Purchases' },
                   { key: 'labor', label: 'Labor Wages' },
@@ -688,14 +690,14 @@ const ProjectDetail = () => {
             {/* Smart Alerts Feed */}
             <div className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3>Active Alerts & Theft Checks</h3>
-                <span className="badge badge-danger">Live</span>
+                <h3>{t('Active Alerts & Theft Checks')}</h3>
+                <span className="badge badge-danger">{t('Live')}</span>
               </div>
 
               {dashboardData.alerts.length === 0 ? (
                 <div style={styles.noAlerts}>
                   <CheckCircle size={32} style={{ color: 'var(--success-green)', marginBottom: '0.5rem' }} />
-                  <p>All operations normal. No fraud risks or cost breaches detected.</p>
+                  <p>{t('All operations normal. No fraud risks or cost breaches detected.')}</p>
                 </div>
               ) : (
                 <div style={styles.alertsList}>
@@ -725,18 +727,18 @@ const ProjectDetail = () => {
       {activeTab === 'reports' && (
         <div style={styles.tabContent}>
           <div style={styles.tabActions}>
-            <h3>Site Activity Logs</h3>
+            <h3>{t('Site Activity Logs')}</h3>
             {user && !isAccountant && (
               <button onClick={() => setShowReportModal(true)} className="btn btn-primary">
                 <Camera size={18} />
-                <span>Upload Daily Log</span>
+                <span>{t('Upload Daily Log')}</span>
               </button>
             )}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.5rem' }}>
             {reports.length === 0 ? (
-              <div style={styles.noDataBox}>No reports uploaded yet. Site manager must post daily updates.</div>
+              <div style={styles.noDataBox}>{t('No reports uploaded yet. Site manager must post daily updates.')}</div>
             ) : (
               reports.map((rep) => (
                 <div key={rep._id} className="card" style={styles.reportCard}>
@@ -769,7 +771,7 @@ const ProjectDetail = () => {
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600' }}>
                       <TrendingUp size={16} style={{ color: rep.aiAnalysis.delayRisk ? 'var(--alert-red)' : 'var(--success-green)' }} />
-                      <span>Site Vision AI Analysis Output:</span>
+                      <span>{t('Site Vision AI Analysis Output:')}</span>
                     </div>
                     <p style={{ fontSize: '0.9rem', marginTop: '0.25rem', color: 'var(--dark-graphite-text)' }}>
                       {rep.aiAnalysis.notes}
@@ -787,7 +789,7 @@ const ProjectDetail = () => {
         <div style={styles.tabContent}>
           <div style={styles.tabActions}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <h3>Labor Force Registry</h3>
+              <h3>{t('Labor Force Registry')}</h3>
               <input 
                 type="date" 
                 className="form-control" 
@@ -802,7 +804,7 @@ const ProjectDetail = () => {
             {user && !isAccountant && (
               <button onClick={() => setShowWorkerModal(true)} className="btn btn-primary">
                 <UserPlus size={18} />
-                <span>Add Worker Profile</span>
+                <span>{t('Add Worker Profile')}</span>
               </button>
             )}
           </div>
@@ -812,17 +814,17 @@ const ProjectDetail = () => {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Worker Name</th>
-                    <th>Role</th>
-                    <th>Daily Wage (Rs)</th>
-                    <th>Phone</th>
+                    <th>{t('Worker Name')}</th>
+                    <th>{t('Role')}</th>
+                    <th>{t('Daily Wage (Rs)')}</th>
+                    <th>{t('Phone')}</th>
                     <th>Attendance State ({selectedDate})</th>
                   </tr>
                 </thead>
                 <tbody>
                   {workers.length === 0 ? (
                     <tr>
-                      <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No labor registered. Add worker profiles first.</td>
+                      <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{t('No labor registered. Add worker profiles first.')}</td>
                     </tr>
                   ) : (
                     workers.map((work) => {
@@ -878,16 +880,16 @@ const ProjectDetail = () => {
       {activeTab === 'materials' && (
         <div style={styles.tabContent}>
           <div style={styles.tabActions}>
-            <h3>Raw Materials Stocks</h3>
+            <h3>{t('Raw Materials Stocks')}</h3>
             {user && !isAccountant && (
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <button onClick={() => setShowMaterialModal(true)} className="btn btn-outline">
                   <Plus size={18} />
-                  <span>Register Material</span>
+                  <span>{t('Register Material')}</span>
                 </button>
                 <button onClick={() => setShowMaterialLogModal(true)} className="btn btn-primary">
                   <Package size={18} />
-                  <span>Log Stock Transaction</span>
+                  <span>{t('Log Stock Transaction')}</span>
                 </button>
               </div>
             )}
@@ -897,7 +899,7 @@ const ProjectDetail = () => {
           <div className="grid grid-4" style={{ marginTop: '1.5rem' }}>
             {materials.length === 0 ? (
               <div style={{ gridColumn: 'span 4', textAlign: 'center', padding: '2rem', backgroundColor: '#fff', borderRadius: 'var(--radius-md)' }}>
-                No materials registered. Add categories like Cement, Bricks, or Steel.
+                {t('No materials registered. Add categories like Cement, Bricks, or Steel.')}
               </div>
             ) : (
               materials.map((mat) => (
@@ -908,16 +910,16 @@ const ProjectDetail = () => {
                   <span style={styles.stockCardName}>{mat.name}</span>
                   <div style={styles.stockCardValues}>
                     <div style={{ textAlign: 'center' }}>
-                      <span style={styles.stockCardValLabel}>Inward Total</span>
+                      <span style={styles.stockCardValLabel}>{t('Inward Total')}</span>
                       <h4>{mat.totalIn} {mat.unit}</h4>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <span style={styles.stockCardValLabel}>Used Total</span>
+                      <span style={styles.stockCardValLabel}>{t('Used Total')}</span>
                       <h4>{mat.totalUsed} {mat.unit}</h4>
                     </div>
                   </div>
                   <div style={styles.stockCardFooter}>
-                    <span>Remaining Balance</span>
+                    <span>{t('Remaining Balance')}</span>
                     <strong style={{
                       color: mat.remaining < 0 ? 'var(--alert-red)' : 'var(--dark-graphite)',
                       fontSize: '1.25rem'
@@ -935,23 +937,23 @@ const ProjectDetail = () => {
 
           {/* Audit Logs Table */}
           <div style={{ marginTop: '2.5rem' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Stock Modification Audits (Fraud Prevention)</h3>
+            <h3 style={{ marginBottom: '1rem' }}>{t('Stock Modification Audits (Fraud Prevention)')}</h3>
             <div className="table-container">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Material</th>
-                    <th>Type</th>
-                    <th>Quantity</th>
-                    <th>Audit Details / Notes</th>
-                    <th>Authorized By</th>
+                    <th>{t('Date')}</th>
+                    <th>{t('Material')}</th>
+                    <th>{t('Type')}</th>
+                    <th>{t('Quantity')}</th>
+                    <th>{t('Audit Details / Notes')}</th>
+                    <th>{t('Authorized By')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {materialLogs.length === 0 ? (
                     <tr>
-                      <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No stock logs recorded.</td>
+                      <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{t('No stock logs recorded.')}</td>
                     </tr>
                   ) : (
                     materialLogs.map((log) => (
@@ -960,7 +962,7 @@ const ProjectDetail = () => {
                         <td><strong>{log.materialId?.name}</strong></td>
                         <td>
                           <span className={`badge ${log.type === 'IN' ? 'badge-success' : 'badge-danger'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                            {log.type === 'IN' ? <ArrowDownLeft size={12} /> : <ArrowUpRight size={12} />}
+                            {log.type === 'IN' ? <ArrowDownLeft size={12} />{t(' : ')}<ArrowUpRight size={12} />}
                             {log.type}
                           </span>
                         </td>
@@ -982,7 +984,7 @@ const ProjectDetail = () => {
         <div style={styles.tabContent}>
           <div style={styles.tabActions}>
             <div>
-              <h3>Project Bills & Expenses</h3>
+              <h3>{t('Project Bills & Expenses')}</h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                 {user?.role === 'contractor'
                   ? 'Submit expenses with receipts for owner approval. Pending items do not affect approved spent budget.'
@@ -997,7 +999,7 @@ const ProjectDetail = () => {
 
           {/* Category Filter Pills */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)', marginRight: '0.25rem' }}>Category Filter:</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)', marginRight: '0.25rem' }}>{t('Category Filter:')}</span>
             {[
               { id: 'all', label: 'All Categories' },
               { id: 'material', label: '🧱 Material' },
@@ -1042,13 +1044,13 @@ const ProjectDetail = () => {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Category</th>
-                    <th>Amount (Rs)</th>
-                    <th>Description</th>
-                    <th>Entered By</th>
-                    <th>Status</th>
-                    {(isOwner || isManager || user?.role === 'admin') && <th>Action</th>}
+                    <th>{t('Date')}</th>
+                    <th>{t('Category')}</th>
+                    <th>{t('Amount (Rs)')}</th>
+                    <th>{t('Description')}</th>
+                    <th>{t('Entered By')}</th>
+                    <th>{t('Status')}</th>
+                    {(isOwner || isManager || user?.role === 'admin') && <th>{t('Action')}</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -1087,7 +1089,7 @@ const ProjectDetail = () => {
                             Rs {exp.amount.toLocaleString()}
                             {exp.status === 'pending' && (
                               <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', backgroundColor: 'rgba(243, 156, 18, 0.15)', borderRadius: '4px' }}>
-                                Pending
+                                {t('Pending')}
                               </span>
                             )}
                           </strong>
@@ -1168,27 +1170,27 @@ const ProjectDetail = () => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginTop: '1.5rem' }}>
                 <div className="card" style={{ ...styles.metricCard, borderTop: '3px solid var(--steel-blue)' }}>
                   <div style={styles.metricHeader}>
-                    <span>Contract Value</span>
+                    <span>{t('Contract Value')}</span>
                     <DollarSign size={18} style={{ color: 'var(--steel-blue)' }} />
                   </div>
                   <h3 style={{ color: 'var(--steel-blue)' }}>
                     Rs {projectContract ? projectContract.contractAmount.toLocaleString() : 'N/A'}
                   </h3>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Agreed Amount</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('Total Agreed Amount')}</span>
                 </div>
                 <div className="card" style={{ ...styles.metricCard, borderTop: '3px solid var(--success-green)' }}>
                   <div style={styles.metricHeader}>
-                    <span>Total Received</span>
+                    <span>{t('Total Received')}</span>
                     <DollarSign size={18} style={{ color: 'var(--success-green)' }} />
                   </div>
                   <h3 style={{ color: 'var(--success-green)' }}>
                     Rs {projectPayments.reduce((s, p) => s + p.amount, 0).toLocaleString()}
                   </h3>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Payments Disbursed</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('Payments Disbursed')}</span>
                 </div>
                 <div className="card" style={{ ...styles.metricCard, borderTop: '3px solid var(--primary-orange)' }}>
                   <div style={styles.metricHeader}>
-                    <span>Balance Due</span>
+                    <span>{t('Balance Due')}</span>
                     <TrendingUp size={18} style={{ color: 'var(--primary-orange)' }} />
                   </div>
                   <h3 style={{ color: 'var(--primary-orange)' }}>
@@ -1196,48 +1198,48 @@ const ProjectDetail = () => {
                       ? Math.max(0, projectContract.contractAmount - projectPayments.reduce((s, p) => s + p.amount, 0)).toLocaleString()
                       : 'N/A'}
                   </h3>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Remaining to Receive</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('Remaining to Receive')}</span>
                 </div>
                 <div className="card" style={{ ...styles.metricCard, borderTop: '3px solid #9b59b6' }}>
                   <div style={styles.metricHeader}>
-                    <span>Instalments</span>
+                    <span>{t('Instalments')}</span>
                     <FileText size={18} style={{ color: '#9b59b6' }} />
                   </div>
                   <h3 style={{ color: '#9b59b6' }}>{projectPayments.length}</h3>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Payments Received</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('Payments Received')}</span>
                 </div>
               </div>
 
               <div className="card" style={{ marginTop: '1.5rem' }}>
                 <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <FileText size={18} style={{ color: 'var(--primary-orange)' }} />
-                  My Contract Agreement
+                  {t('My Contract Agreement')}
                 </h4>
                 {projectContract ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                       <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Project</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>{t('Project')}</div>
                         <strong>{dashboardData.projectName}</strong>
                       </div>
                       <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Contract Status</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>{t('Contract Status')}</div>
                         <span className="badge badge-success">{projectContract.status}</span>
                       </div>
                       <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Contract Amount</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>{t('Contract Amount')}</div>
                         <strong style={{ fontSize: '1.1rem', color: 'var(--steel-blue)' }}>
                           Rs {projectContract.contractAmount.toLocaleString()}
                         </strong>
                       </div>
                       <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Signed Date</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>{t('Signed Date')}</div>
                         <strong>{new Date(projectContract.createdAt || Date.now()).toLocaleDateString()}</strong>
                       </div>
                     </div>
                     {projectContract.terms && (
                       <div style={{ padding: '1rem', backgroundColor: 'rgba(255,107,0,0.06)', border: '1px solid rgba(255,107,0,0.15)', borderRadius: 'var(--radius-sm)' }}>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '0.4rem' }}>TERMS & SCOPE OF WORK</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '0.4rem' }}>{t('TERMS & SCOPE OF WORK')}</div>
                         <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{projectContract.terms}</p>
                       </div>
                     )}
@@ -1245,31 +1247,31 @@ const ProjectDetail = () => {
                 ) : (
                   <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
                     <FileText size={32} style={{ marginBottom: '0.5rem', opacity: 0.4 }} />
-                    <p>No contract has been issued for this project yet.</p>
-                    <p style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Contact your company owner to set up the contract.</p>
+                    <p>{t('No contract has been issued for this project yet.')}</p>
+                    <p style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>{t('Contact your company owner to set up the contract.')}</p>
                   </div>
                 )}
               </div>
 
               <div style={{ marginTop: '2rem' }}>
-                <h4 style={{ marginBottom: '1rem' }}>My Payment History</h4>
+                <h4 style={{ marginBottom: '1rem' }}>{t('My Payment History')}</h4>
                 <div className="table-container">
                   <table className="table">
                     <thead>
                       <tr>
                         <th>#</th>
-                        <th>Date</th>
-                        <th>Amount (PKR)</th>
-                        <th>Payment Method</th>
-                        <th>Reference No.</th>
-                        <th>Status</th>
+                        <th>{t('Date')}</th>
+                        <th>{t('Amount (PKR)')}</th>
+                        <th>{t('Payment Method')}</th>
+                        <th>{t('Reference No.')}</th>
+                        <th>{t('Status')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {projectPayments.length === 0 ? (
                         <tr>
                           <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
-                            No payments have been released yet.
+                            {t('No payments have been released yet.')}
                           </td>
                         </tr>
                       ) : (
@@ -1280,7 +1282,7 @@ const ProjectDetail = () => {
                             <td><strong style={{ color: 'var(--success-green)' }}>Rs {p.amount.toLocaleString()}</strong></td>
                             <td><span className="badge badge-info">{p.paymentMethod.replace('_', ' ')}</span></td>
                             <td>{p.referenceNumber || 'N/A'}</td>
-                            <td><span className="badge badge-success">Received</span></td>
+                            <td><span className="badge badge-success">{t('Received')}</span></td>
                           </tr>
                         ))
                       )}
@@ -1288,7 +1290,7 @@ const ProjectDetail = () => {
                     {projectPayments.length > 0 && (
                       <tfoot>
                         <tr style={{ backgroundColor: 'var(--bg-light)', fontWeight: '700' }}>
-                          <td colSpan="2">Total Received</td>
+                          <td colSpan="2">{t('Total Received')}</td>
                           <td style={{ color: 'var(--success-green)' }}>
                             Rs {projectPayments.reduce((s, p) => s + p.amount, 0).toLocaleString()}
                           </td>
@@ -1307,56 +1309,56 @@ const ProjectDetail = () => {
             <>
               <div className="grid grid-2" style={{ marginTop: '1.5rem', gap: '2rem' }}>
                 <div className="card">
-                  <h4>Contract Agreement</h4>
+                  <h4>{t('Contract Agreement')}</h4>
                   {projectContract ? (
                     <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Contractor:</span>
+                        <span style={{ color: 'var(--text-muted)' }}>{t('Contractor:')}</span>
                         <strong>{projectContract.contractorId?.name || 'Assigned Contractor'}</strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Contract Amount:</span>
+                        <span style={{ color: 'var(--text-muted)' }}>{t('Contract Amount:')}</span>
                         <strong>Rs {projectContract.contractAmount.toLocaleString()}</strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Total Paid Out:</span>
+                        <span style={{ color: 'var(--text-muted)' }}>{t('Total Paid Out:')}</span>
                         <strong style={{ color: 'var(--success-green)' }}>
                           Rs {projectPayments.reduce((s, p) => s + p.amount, 0).toLocaleString()}
                         </strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Balance Remaining:</span>
+                        <span style={{ color: 'var(--text-muted)' }}>{t('Balance Remaining:')}</span>
                         <strong style={{ color: 'var(--primary-orange)' }}>
                           Rs {(projectContract.contractAmount - projectPayments.reduce((s, p) => s + p.amount, 0)).toLocaleString()}
                         </strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Contract Status:</span>
+                        <span style={{ color: 'var(--text-muted)' }}>{t('Contract Status:')}</span>
                         <span className="badge badge-success">{projectContract.status}</span>
                       </div>
                       {projectContract.terms && (
                         <div style={{ marginTop: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-sm)' }}>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Terms & Scope:</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('Terms & Scope:')}</span>
                           <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{projectContract.terms}</p>
                         </div>
                       )}
                     </div>
                   ) : (
                     <div style={{ marginTop: '1rem' }}>
-                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No contract terms specified yet.</p>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t('No contract terms specified yet.')}</p>
                       {(isOwner || isManager || user?.role === 'admin') && (
                         <form onSubmit={handleSaveContract} style={{ marginTop: '1rem' }}>
                           <div className="form-group">
-                            <label>Contract Amount (PKR)</label>
+                            <label>{t('Contract Amount (PKR)')}</label>
                             <input type="number" className="form-control" placeholder="e.g. 4500000"
                               value={contractAmountInput} onChange={(e) => setContractAmountInput(e.target.value)} required />
                           </div>
                           <div className="form-group">
-                            <label>Terms & Conditions</label>
+                            <label>{t('Terms & Conditions')}</label>
                             <textarea className="form-control" rows="3" placeholder="Scope of work, milestone delivery expectations..."
                               value={contractTermsInput} onChange={(e) => setContractTermsInput(e.target.value)} />
                           </div>
-                          <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>Save Contract Terms</button>
+                          <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>{t('Save Contract Terms')}</button>
                         </form>
                       )}
                     </div>
@@ -1364,51 +1366,51 @@ const ProjectDetail = () => {
                 </div>
 
                 <div className="card">
-                  <h4>Disburse Contractor Payment</h4>
+                  <h4>{t('Disburse Contractor Payment')}</h4>
                   {(isOwner || isAccountant || user?.role === 'admin') ? (
                     <form onSubmit={handleRecordPayment} style={{ marginTop: '1rem' }}>
                       <div className="form-group">
-                        <label>Payment Amount (PKR)</label>
+                        <label>{t('Payment Amount (PKR)')}</label>
                         <input type="number" className="form-control" placeholder="e.g. 500000"
                           value={paymentAmountInput} onChange={(e) => setPaymentAmountInput(e.target.value)} required />
                       </div>
                       <div className="form-group">
-                        <label>Payment Method</label>
+                        <label>{t('Payment Method')}</label>
                         <select className="form-control" value={paymentMethodInput} onChange={(e) => setPaymentMethodInput(e.target.value)}>
-                          <option value="bank_transfer">Bank Transfer / IBFT</option>
-                          <option value="cheque">Cheque</option>
-                          <option value="cash">Cash</option>
-                          <option value="other">Other</option>
+                          <option value="bank_transfer">{t('Bank Transfer / IBFT')}</option>
+                          <option value="cheque">{t('Cheque')}</option>
+                          <option value="cash">{t('Cash')}</option>
+                          <option value="other">{t('Other')}</option>
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Reference / Cheque Number</label>
+                        <label>{t('Reference / Cheque Number')}</label>
                         <input type="text" className="form-control" placeholder="e.g. TXN-984213 or Cheque #0045"
                           value={paymentRefInput} onChange={(e) => setPaymentRefInput(e.target.value)} />
                       </div>
-                      <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>Record Disbursed Payment</button>
+                      <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>{t('Record Disbursed Payment')}</button>
                     </form>
                   ) : (
                     <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>
-                      Payments can only be disbursed by the Company Owner or Accountant.
+                      {t('Payments can only be disbursed by the Company Owner or Accountant.')}
                     </p>
                   )}
                 </div>
               </div>
 
               <div style={{ marginTop: '2.5rem' }}>
-                <h4 style={{ marginBottom: '1rem' }}>Payment Disbursements History</h4>
+                <h4 style={{ marginBottom: '1rem' }}>{t('Payment Disbursements History')}</h4>
                 <div className="table-container">
                   <table className="table">
                     <thead>
                       <tr>
-                        <th>Date</th><th>Contractor</th><th>Amount (PKR)</th>
-                        <th>Payment Method</th><th>Reference</th><th>Recorded By</th>
+                        <th>{t('Date')}</th><th>{t('Contractor')}</th><th>{t('Amount (PKR)')}</th>
+                        <th>{t('Payment Method')}</th><th>{t('Reference')}</th><th>{t('Recorded By')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {projectPayments.length === 0 ? (
-                        <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No payments released yet.</td></tr>
+                        <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{t('No payments released yet.')}</td></tr>
                       ) : (
                         projectPayments.map((p) => (
                           <tr key={p._id}>
@@ -1425,7 +1427,7 @@ const ProjectDetail = () => {
                     {projectPayments.length > 0 && (
                       <tfoot>
                         <tr style={{ backgroundColor: 'var(--bg-light)', fontWeight: '700' }}>
-                          <td colSpan="2">Total Disbursed</td>
+                          <td colSpan="2">{t('Total Disbursed')}</td>
                           <td>Rs {projectPayments.reduce((s, p) => s + p.amount, 0).toLocaleString()}</td>
                           <td colSpan="3"></td>
                         </tr>
@@ -1443,9 +1445,9 @@ const ProjectDetail = () => {
         <div style={styles.tabContent}>
           <div style={styles.tabActions}>
             <div>
-              <h3>Contractor Access Control (Project Security)</h3>
+              <h3>{t('Contractor Access Control (Project Security)')}</h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                Contractors only see projects where they have an active assignment.
+                {t('Contractors only see projects where they have an active assignment.')}
               </p>
             </div>
           </div>
@@ -1453,17 +1455,17 @@ const ProjectDetail = () => {
           <div className="grid grid-2" style={{ marginTop: '1.5rem', gap: '2rem' }}>
             {/* Assign Contractor Form */}
             <div className="card">
-              <h4>Assign Contractor to this Site</h4>
+              <h4>{t('Assign Contractor to this Site')}</h4>
               <form onSubmit={handleAssignContractor} style={{ marginTop: '1rem' }}>
                 <div className="form-group">
-                  <label>Select Company Contractor</label>
+                  <label>{t('Select Company Contractor')}</label>
                   <select
                     className="form-control"
                     value={selectedContractorToAssign}
                     onChange={(e) => setSelectedContractorToAssign(e.target.value)}
                     required
                   >
-                    <option value="">-- Choose Contractor --</option>
+                    <option value="">{t('-- Choose Contractor --')}</option>
                     {companyContractors.map((c) => (
                       <option key={c._id} value={c._id}>
                         {c.name} ({c.email})
@@ -1472,7 +1474,7 @@ const ProjectDetail = () => {
                   </select>
                 </div>
                 <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>
-                  Grant Project Access
+                  {t('Grant Project Access')}
                 </button>
               </form>
             </div>
@@ -1482,7 +1484,7 @@ const ProjectDetail = () => {
               <h4>Currently Assigned to {dashboardData.projectName}</h4>
               <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {dashboardData.assignedContractors?.length === 0 ? (
-                  <p style={{ color: 'var(--text-muted)' }}>No contractors currently assigned to this project site.</p>
+                  <p style={{ color: 'var(--text-muted)' }}>{t('No contractors currently assigned to this project site.')}</p>
                 ) : (
                   dashboardData.assignedContractors.map((ac) => (
                     <div
@@ -1522,11 +1524,11 @@ const ProjectDetail = () => {
       {showWorkerModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>Add Worker Profile</h2>
+            <h2>{t('Add Worker Profile')}</h2>
             <button onClick={() => setShowWorkerModal(false)} className="modal-close">×</button>
             <form onSubmit={handleAddWorker} style={{ marginTop: '1.5rem' }}>
               <div className="form-group">
-                <label>Worker Full Name</label>
+                <label>{t('Worker Full Name')}</label>
                 <input
                   type="text"
                   className="form-control"
@@ -1538,7 +1540,7 @@ const ProjectDetail = () => {
               </div>
 
               <div className="form-group">
-                <label>Role / Trade</label>
+                <label>{t('Role / Trade')}</label>
                 <input
                   type="text"
                   className="form-control"
@@ -1550,7 +1552,7 @@ const ProjectDetail = () => {
               </div>
 
               <div className="form-group">
-                <label>Daily Wage Rate (PKR)</label>
+                <label>{t('Daily Wage Rate (PKR)')}</label>
                 <input
                   type="number"
                   className="form-control"
@@ -1562,7 +1564,7 @@ const ProjectDetail = () => {
               </div>
 
               <div className="form-group">
-                <label>Phone Number</label>
+                <label>{t('Phone Number')}</label>
                 <input
                   type="text"
                   className="form-control"
@@ -1574,8 +1576,8 @@ const ProjectDetail = () => {
               </div>
 
               <div style={styles.modalActions}>
-                <button type="button" onClick={() => setShowWorkerModal(false)} className="btn btn-outline">Cancel</button>
-                <button type="submit" className="btn btn-primary">Save Profile</button>
+                <button type="button" onClick={() => setShowWorkerModal(false)} className="btn btn-outline">{t('Cancel')}</button>
+                <button type="submit" className="btn btn-primary">{t('Save Profile')}</button>
               </div>
             </form>
           </div>
@@ -1586,11 +1588,11 @@ const ProjectDetail = () => {
       {showMaterialModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>Register Material Category</h2>
+            <h2>{t('Register Material Category')}</h2>
             <button onClick={() => setShowMaterialModal(false)} className="modal-close">×</button>
             <form onSubmit={handleAddMaterial} style={{ marginTop: '1.5rem' }}>
               <div className="form-group">
-                <label>Material Name</label>
+                <label>{t('Material Name')}</label>
                 <input
                   type="text"
                   className="form-control"
@@ -1602,22 +1604,22 @@ const ProjectDetail = () => {
               </div>
 
               <div className="form-group">
-                <label>Inventory Unit</label>
+                <label>{t('Inventory Unit')}</label>
                 <select 
                   className="form-control"
                   value={mUnit}
                   onChange={(e) => setMUnit(e.target.value)}
                 >
-                  <option value="bags">Bags (cement)</option>
-                  <option value="kg">Kilograms (steel/nails)</option>
-                  <option value="ton">Tons (aggregate/steel)</option>
-                  <option value="pieces">Pieces (bricks/tiles)</option>
+                  <option value="bags">{t('Bags (cement)')}</option>
+                  <option value="kg">{t('Kilograms (steel/nails)')}</option>
+                  <option value="ton">{t('Tons (aggregate/steel)')}</option>
+                  <option value="pieces">{t('Pieces (bricks/tiles)')}</option>
                 </select>
               </div>
 
               <div style={styles.modalActions}>
-                <button type="button" onClick={() => setShowMaterialModal(false)} className="btn btn-outline">Cancel</button>
-                <button type="submit" className="btn btn-primary">Register</button>
+                <button type="button" onClick={() => setShowMaterialModal(false)} className="btn btn-outline">{t('Cancel')}</button>
+                <button type="submit" className="btn btn-primary">{t('Register')}</button>
               </div>
             </form>
           </div>
@@ -1628,18 +1630,18 @@ const ProjectDetail = () => {
       {showMaterialLogModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>Log Stock Transaction</h2>
+            <h2>{t('Log Stock Transaction')}</h2>
             <button onClick={() => setShowMaterialLogModal(false)} className="modal-close">×</button>
             <form onSubmit={handleLogMaterial} style={{ marginTop: '1.5rem' }}>
               <div className="form-group">
-                <label>Select Material</label>
+                <label>{t('Select Material')}</label>
                 <select 
                   className="form-control"
                   value={mlId}
                   onChange={(e) => setMlId(e.target.value)}
                   required
                 >
-                  <option value="">-- Choose Material --</option>
+                  <option value="">{t('-- Choose Material --')}</option>
                   {materials.map(m => (
                     <option key={m._id} value={m._id}>{m.name} ({m.unit})</option>
                   ))}
@@ -1647,7 +1649,7 @@ const ProjectDetail = () => {
               </div>
 
               <div className="form-group">
-                <label>Transaction Type</label>
+                <label>{t('Transaction Type')}</label>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', textTransform: 'none', fontWeight: 'normal' }}>
                     <input type="radio" name="mlType" value="IN" checked={mlType === 'IN'} onChange={() => setMlType('IN')} />
@@ -1661,7 +1663,7 @@ const ProjectDetail = () => {
               </div>
 
               <div className="form-group">
-                <label>Quantity</label>
+                <label>{t('Quantity')}</label>
                 <input
                   type="number"
                   className="form-control"
@@ -1673,7 +1675,7 @@ const ProjectDetail = () => {
               </div>
 
               <div className="form-group">
-                <label>Auditing Notes</label>
+                <label>{t('Auditing Notes')}</label>
                 <input
                   type="text"
                   className="form-control"
@@ -1684,8 +1686,8 @@ const ProjectDetail = () => {
               </div>
 
               <div style={styles.modalActions}>
-                <button type="button" onClick={() => setShowMaterialLogModal(false)} className="btn btn-outline">Cancel</button>
-                <button type="submit" className="btn btn-primary">Log Audit Transaction</button>
+                <button type="button" onClick={() => setShowMaterialLogModal(false)} className="btn btn-outline">{t('Cancel')}</button>
+                <button type="submit" className="btn btn-primary">{t('Log Audit Transaction')}</button>
               </div>
             </form>
           </div>
@@ -1696,11 +1698,11 @@ const ProjectDetail = () => {
       {showExpenseModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>Record Expense Item</h2>
+            <h2>{t('Record Expense Item')}</h2>
             <button onClick={() => setShowExpenseModal(false)} className="modal-close">×</button>
             <form onSubmit={handleAddExpenseSubmit} style={{ marginTop: '1.5rem' }}>
               <div className="form-group">
-                <label>Expense Category</label>
+                <label>{t('Expense Category')}</label>
                 <select 
                   className="form-control"
                   value={eCategory}
@@ -1719,7 +1721,7 @@ const ProjectDetail = () => {
               </div>
 
               <div className="form-group">
-                <label>Amount (PKR)</label>
+                <label>{t('Amount (PKR)')}</label>
                 <input
                   type="number"
                   className="form-control"
@@ -1731,7 +1733,7 @@ const ProjectDetail = () => {
               </div>
 
               <div className="form-group">
-                <label>Bill Description</label>
+                <label>{t('Bill Description')}</label>
                 <input
                   type="text"
                   className="form-control"
@@ -1743,8 +1745,8 @@ const ProjectDetail = () => {
               </div>
 
               <div style={styles.modalActions}>
-                <button type="button" onClick={() => setShowExpenseModal(false)} className="btn btn-outline">Cancel</button>
-                <button type="submit" className="btn btn-primary">Log Bill</button>
+                <button type="button" onClick={() => setShowExpenseModal(false)} className="btn btn-outline">{t('Cancel')}</button>
+                <button type="submit" className="btn btn-primary">{t('Log Bill')}</button>
               </div>
             </form>
           </div>
@@ -1755,7 +1757,7 @@ const ProjectDetail = () => {
       {showReportModal && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '850px', width: '90%' }}>
-            <h2>Daily Work Log & Vision AI Upload</h2>
+            <h2>{t('Daily Work Log & Vision AI Upload')}</h2>
             <button onClick={() => setShowReportModal(false)} className="modal-close">×</button>
             
             <div style={{ display: 'flex', gap: '2rem', marginTop: '1.5rem', flexWrap: 'wrap', alignItems: 'stretch' }}>
@@ -1764,7 +1766,7 @@ const ProjectDetail = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                   <Mic size={18} style={{ color: 'var(--primary-orange)' }} />
                   <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-                    Urdu Voice Assistant (Smart Site Entry)
+                    {t('Urdu Voice Assistant (Smart Site Entry)')}
                   </h4>
                 </div>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: '1.4' }}>
@@ -1796,22 +1798,22 @@ const ProjectDetail = () => {
               {/* Right Column: Form */}
               <form onSubmit={handleAddReportSubmit} style={{ flex: '1 2 420px', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: 0 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Work Stage / Type</label>
+                  <label>{t('Work Stage / Type')}</label>
                   <select 
                     className="form-control"
                     value={rWorkType}
                     onChange={(e) => setRWorkType(e.target.value)}
                   >
-                    <option value="Foundation">Foundation work</option>
-                    <option value="Structure">Structure building</option>
-                    <option value="Slab">Slab casting</option>
-                    <option value="Finishing">Finishing & painting</option>
-                    <option value="Other">Other</option>
+                    <option value="Foundation">{t('Foundation work')}</option>
+                    <option value="Structure">{t('Structure building')}</option>
+                    <option value="Slab">{t('Slab casting')}</option>
+                    <option value="Finishing">{t('Finishing & painting')}</option>
+                    <option value="Other">{t('Other')}</option>
                   </select>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Work Description Log</label>
+                  <label>{t('Work Description Log')}</label>
                   <textarea
                     className="form-control"
                     rows="4"
@@ -1823,7 +1825,7 @@ const ProjectDetail = () => {
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Site Capture (Upload from Gallery)</label>
+                  <label>{t('Site Capture (Upload from Gallery)')}</label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <input
                       type="file"
@@ -1840,7 +1842,7 @@ const ProjectDetail = () => {
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', margin: 0 }}
                       >
                         <Camera size={18} />
-                        <span>Choose Photo(s)</span>
+                        <span>{t('Choose Photo(s)')}</span>
                       </label>
                       <button 
                         type="button" 
@@ -1888,8 +1890,8 @@ const ProjectDetail = () => {
                 </div>
 
                 <div style={{ ...styles.modalActions, marginTop: '1rem' }}>
-                  <button type="button" onClick={() => setShowReportModal(false)} className="btn btn-outline">Cancel</button>
-                  <button type="submit" className="btn btn-primary">Submit Daily Log</button>
+                  <button type="button" onClick={() => setShowReportModal(false)} className="btn btn-outline">{t('Cancel')}</button>
+                  <button type="submit" className="btn btn-primary">{t('Submit Daily Log')}</button>
                 </div>
               </form>
             </div>

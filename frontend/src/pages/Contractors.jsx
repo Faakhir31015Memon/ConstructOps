@@ -138,7 +138,7 @@ const Contractors = () => {
     return (
       <div style={styles.loading}>
         <RefreshCw size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--primary-orange)' }} />
-        <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>Loading contractor registry...</p>
+        <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>{t('Loading contractor registry...')}</p>
       </div>
     );
   }
@@ -150,7 +150,7 @@ const Contractors = () => {
         <div>
           <h1 style={styles.pageTitle}>
             <Users size={28} style={{ color: 'var(--primary-orange)', marginRight: '0.75rem' }} />
-            Contractor Management
+            {t('Contractor Management')}
           </h1>
           <p style={styles.pageSubtitle}>
             Register contractors, manage their project access, and control site permissions.
@@ -163,7 +163,7 @@ const Contractors = () => {
             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
           >
             <Briefcase size={16} />
-            Assign to Project
+            {t('Assign to Project')}
           </button>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -171,7 +171,7 @@ const Contractors = () => {
             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
           >
             <UserPlus size={16} />
-            Add Contractor
+            {t('Add Contractor')}
           </button>
         </div>
       </div>
@@ -198,7 +198,7 @@ const Contractors = () => {
           <div style={styles.statIcon}><Users size={22} style={{ color: 'var(--primary-orange)' }} /></div>
           <div>
             <div style={styles.statValue}>{contractors.length}</div>
-            <div style={styles.statLabel}>Total Contractors</div>
+            <div style={styles.statLabel}>{t('Total Contractors')}</div>
           </div>
         </div>
         <div className="card" style={styles.statCard}>
@@ -207,7 +207,7 @@ const Contractors = () => {
             <div style={styles.statValue}>
               {contractors.filter((c) => c.status === 'active').length}
             </div>
-            <div style={styles.statLabel}>Active Contractors</div>
+            <div style={styles.statLabel}>{t('Active Contractors')}</div>
           </div>
         </div>
         <div className="card" style={styles.statCard}>
@@ -216,14 +216,14 @@ const Contractors = () => {
             <div style={styles.statValue}>
               {contractors.filter((c) => c.assignedProjects?.length > 0).length}
             </div>
-            <div style={styles.statLabel}>Currently Assigned</div>
+            <div style={styles.statLabel}>{t('Currently Assigned')}</div>
           </div>
         </div>
         <div className="card" style={styles.statCard}>
           <div style={styles.statIcon}><Shield size={22} style={{ color: '#9b59b6' }} /></div>
           <div>
             <div style={styles.statValue}>{projects.length}</div>
-            <div style={styles.statLabel}>Total Projects</div>
+            <div style={styles.statLabel}>{t('Total Projects')}</div>
           </div>
         </div>
       </div>
@@ -259,7 +259,7 @@ const Contractors = () => {
               style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
             >
               <Plus size={16} />
-              Add First Contractor
+              {t('Add First Contractor')}
             </button>
           )}
         </div>
@@ -324,7 +324,7 @@ const Contractors = () => {
                     ))}
                   </div>
                 ) : (
-                  <p style={styles.noProjects}>No projects assigned yet</p>
+                  <p style={styles.noProjects}>{t('No projects assigned yet')}</p>
                 )}
               </div>
 
@@ -339,7 +339,7 @@ const Contractors = () => {
                   style={{ flex: 1, padding: '0.4rem 0.75rem', fontSize: '0.82rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
                 >
                   <Plus size={14} />
-                  Assign Project
+                  {t('Assign Project')}
                 </button>
                 <button
                   onClick={() => navigate(`/projects`)}
@@ -347,7 +347,7 @@ const Contractors = () => {
                   style={{ flex: 1, padding: '0.4rem 0.75rem', fontSize: '0.82rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
                 >
                   <Briefcase size={14} />
-                  View Projects
+                  {t('View Projects')}
                 </button>
               </div>
             </div>
@@ -361,7 +361,7 @@ const Contractors = () => {
           <div className="modal-content" style={{ maxWidth: '480px' }}>
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <UserPlus size={22} style={{ color: 'var(--primary-orange)' }} />
-              Register New Contractor
+              {t('Register New Contractor')}
             </h2>
             <button onClick={() => setShowCreateModal(false)} className="modal-close">×</button>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
@@ -369,7 +369,7 @@ const Contractors = () => {
             </p>
             <form onSubmit={handleCreateContractor} style={{ marginTop: '1.5rem' }}>
               <div className="form-group">
-                <label>Full Name</label>
+                <label>{t('Full Name')}</label>
                 <input
                   type="text"
                   className="form-control"
@@ -380,7 +380,7 @@ const Contractors = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Email Address</label>
+                <label>{t('Email Address')}</label>
                 <input
                   type="email"
                   className="form-control"
@@ -391,7 +391,7 @@ const Contractors = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Temporary Password</label>
+                <label>{t('Temporary Password')}</label>
                 <input
                   type="password"
                   className="form-control"
@@ -402,7 +402,7 @@ const Contractors = () => {
                   minLength={6}
                 />
                 <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                  Share this password securely with the contractor.
+                  {t('Share this password securely with the contractor.')}
                 </small>
               </div>
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
@@ -434,7 +434,7 @@ const Contractors = () => {
           <div className="modal-content" style={{ maxWidth: '440px' }}>
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <Shield size={22} style={{ color: 'var(--primary-orange)' }} />
-              Assign Contractor to Project
+              {t('Assign Contractor to Project')}
             </h2>
             <button onClick={() => { setShowAssignModal(false); setAssignContractorId(''); }} className="modal-close">×</button>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
@@ -442,14 +442,14 @@ const Contractors = () => {
             </p>
             <form onSubmit={handleAssignToProject} style={{ marginTop: '1.5rem' }}>
               <div className="form-group">
-                <label>Select Contractor</label>
+                <label>{t('Select Contractor')}</label>
                 <select
                   className="form-control"
                   value={assignContractorId}
                   onChange={(e) => setAssignContractorId(e.target.value)}
                   required
                 >
-                  <option value="">-- Choose Contractor --</option>
+                  <option value="">{t('-- Choose Contractor --')}</option>
                   {contractors.map((c) => (
                     <option key={c._id} value={c._id}>
                       {c.name} ({c.email})
@@ -458,14 +458,14 @@ const Contractors = () => {
                 </select>
               </div>
               <div className="form-group">
-                <label>Select Project</label>
+                <label>{t('Select Project')}</label>
                 <select
                   className="form-control"
                   value={assignProjectId}
                   onChange={(e) => setAssignProjectId(e.target.value)}
                   required
                 >
-                  <option value="">-- Choose Project --</option>
+                  <option value="">{t('-- Choose Project --')}</option>
                   {projects.map((p) => (
                     <option key={p._id} value={p._id}>
                       {p.name} — {p.location}
