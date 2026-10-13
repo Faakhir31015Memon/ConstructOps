@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login, loginAdmin } from '../services/api';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
+import { useLang } from '../i18n/LanguageContext';
+import LanguageSelect from '../components/LanguageSelect';
 
 const Login = () => {
+  const { t, setLang } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,6 +18,7 @@ const Login = () => {
       : '';
   });
   const navigate = useNavigate();
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,17 +38,18 @@ const Login = () => {
       if (data.success) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        if (data.user.language) setLang(data.user.language);
         if (data.user.role === 'admin') {
           navigate('/dashboard');
         } else {
           navigate('/projects');
         }
       } else {
-        setError(data.message || 'Login failed');
+        setError(t(data.message || 'Login failed'));
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Server error. Please try again.');
+      setError(t(err.response?.data?.message || 'Server error. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -69,7 +74,7 @@ const Login = () => {
               Ops
             </text>
           </svg>
-          <p style={styles.subtitle}>Smart site logs & cost controls. Track everything.</p>
+          <p style={styles.subtitle}>{t('Smart site logs & cost controls. Track everything.')}</p>
         </div>
 
         {error && (
@@ -82,20 +87,24 @@ const Login = () => {
         {infoMsg && !error && (
           <div style={styles.infoBox}>
             <AlertCircle size={18} />
-            <span>{infoMsg}</span>
+            <span>{t(infoMsg)}</span>
           </div>
         )}
 
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+          <LanguageSelect tone="light" />
+        </div>
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Email Address</label>
+            <label>{t('Email Address')}</label>
             <div style={styles.inputWrapper}>
               <Mail size={18} style={styles.inputIcon} />
               <input
                 type="email"
                 className="form-control"
                 style={styles.input}
-                placeholder="enter email"
+                placeholder={t('enter email')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -104,7 +113,7 @@ const Login = () => {
           </div>
 
           <div className="form-group">
-            <label>Password</label>
+            <label>{t('Password')}</label>
             <div style={styles.inputWrapper}>
               <Lock size={18} style={styles.inputIcon} />
               <input
@@ -125,12 +134,13 @@ const Login = () => {
             style={styles.submitBtn}
             disabled={loading}
           >
-            {loading ? 'Logging in...' : 'Log In'}
+            {loading ? t('Logging in...') : t('Log In')}
           </button>
         </form>
 
         <div style={styles.footerLink}>
-          Don't have an account? <Link to="/register" style={styles.link}>Create Account</Link>
+          {t("Don't have an account?")}{' '}
+          <Link to="/register" style={styles.link}>{t('Create Account')}</Link>
         </div>
       </div>
     </div>

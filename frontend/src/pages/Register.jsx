@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../services/api';
 import { User, Lock, Mail, Building2, AlertCircle } from 'lucide-react';
+import { useLang } from '../i18n/LanguageContext';
+import LanguageSelect from '../components/LanguageSelect';
 
 const Register = () => {
+  const { t, lang } = useLang();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,17 +21,17 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const data = await register(name, email, password, companyName);
+      const data = await register(name, email, password, companyName, lang);
       if (data.success) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         navigate('/projects');
       } else {
-        setError(data.message || 'Registration failed');
+        setError(t(data.message || 'Registration failed'));
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Server error. Please try again.');
+      setError(t(err.response?.data?.message || 'Server error. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -53,7 +56,7 @@ const Register = () => {
               Ops
             </text>
           </svg>
-          <p style={styles.subtitle}>Register your building agency and start tracking.</p>
+          <p style={styles.subtitle}>{t('Register your building agency and start tracking.')}</p>
         </div>
 
         {error && (
@@ -63,16 +66,20 @@ const Register = () => {
           </div>
         )}
 
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+          <LanguageSelect tone="light" />
+        </div>
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Owner Name</label>
+            <label>{t('Owner Name')}</label>
             <div style={styles.inputWrapper}>
               <User size={18} style={styles.inputIcon} />
               <input
                 type="text"
                 className="form-control"
                 style={styles.input}
-                placeholder="Full Name"
+                placeholder={t('Full Name')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -81,14 +88,14 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label>Company/Builder Name</label>
+            <label>{t('Company/Builder Name')}</label>
             <div style={styles.inputWrapper}>
               <Building2 size={18} style={styles.inputIcon} />
               <input
                 type="text"
                 className="form-control"
                 style={styles.input}
-                placeholder="e.g. ABC Builders"
+                placeholder={t('e.g. ABC Builders')}
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 required
@@ -97,7 +104,7 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label>Email Address</label>
+            <label>{t('Email Address')}</label>
             <div style={styles.inputWrapper}>
               <Mail size={18} style={styles.inputIcon} />
               <input
@@ -113,7 +120,7 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label>Password</label>
+            <label>{t('Password')}</label>
             <div style={styles.inputWrapper}>
               <Lock size={18} style={styles.inputIcon} />
               <input
@@ -134,12 +141,13 @@ const Register = () => {
             style={styles.submitBtn}
             disabled={loading}
           >
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? t('Creating account...') : t('Create Account')}
           </button>
         </form>
 
         <div style={styles.footerLink}>
-          Already have an account? <Link to="/login" style={styles.link}>Log In</Link>
+          {t('Already have an account?')}{' '}
+          <Link to="/login" style={styles.link}>{t('Log In')}</Link>
         </div>
       </div>
     </div>

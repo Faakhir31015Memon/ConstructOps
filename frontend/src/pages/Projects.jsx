@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProjects, createProject } from '../services/api';
 import { Plus, MapPin, DollarSign, Calendar, Sliders, PlayCircle } from 'lucide-react';
+import { useLang } from '../i18n/LanguageContext';
 
 const Projects = () => {
+  const { t, locale } = useLang();
   const [projects, setProjects] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ const Projects = () => {
     setFormError('');
 
     if (new Date(startDate) > new Date(endDate)) {
-      setFormError('Start date cannot be after end date.');
+      setFormError(t('Start date cannot be after end date.'));
       return;
     }
 
@@ -65,7 +67,7 @@ const Projects = () => {
         fetchProjectsList();
       }
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Failed to create project');
+      setFormError(t(err.response?.data?.message || 'Failed to create project'));
     }
   };
 
@@ -88,36 +90,36 @@ const Projects = () => {
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>
-            {user?.role === 'contractor' ? 'My Assigned Construction Sites' : 'All Construction Projects'}
+            {user?.role === 'contractor' ? t('My Assigned Construction Sites') : t('All Construction Projects')}
           </h1>
           <p style={styles.subtitle}>
-            {user?.role === 'contractor' 
-              ? 'Access site modules and submit daily records for assigned projects.' 
-              : 'Manage active locations, budgets, and track progress.'}
+            {user?.role === 'contractor'
+              ? t('Access site modules and submit daily records for assigned projects.')
+              : t('Manage active locations, budgets, and track progress.')}
           </p>
         </div>
         {user && ['owner', 'manager', 'admin'].includes(user.role) && (
           <button onClick={() => setShowModal(true)} className="btn btn-primary">
             <Plus size={18} />
-            <span>New Project</span>
+            <span>{t('New Project')}</span>
           </button>
         )}
       </div>
 
       {loading ? (
-        <div style={styles.loading}>Loading projects...</div>
+        <div style={styles.loading}>{t('Loading projects...')}</div>
       ) : projects.length === 0 ? (
         <div style={styles.emptyState}>
-          <h3>{user?.role === 'contractor' ? 'No Projects Assigned' : 'No projects registered'}</h3>
+          <h3>{user?.role === 'contractor' ? t('No Projects Assigned') : t('No projects registered')}</h3>
           <p>
-            {user?.role === 'contractor' 
-              ? 'You do not have any active project assignments yet. Contact your Company Owner.' 
-              : 'Get started by creating your first construction project site.'}
+            {user?.role === 'contractor'
+              ? t('You do not have any active project assignments yet. Contact your Company Owner.')
+              : t('Get started by creating your first construction project site.')}
           </p>
           {user && ['owner', 'manager', 'admin'].includes(user.role) && (
             <button onClick={() => setShowModal(true)} className="btn btn-primary" style={{ marginTop: '1rem' }}>
               <Plus size={18} />
-              <span>Create Project</span>
+              <span>{t('Create Project')}</span>
             </button>
           )}
         </div>
@@ -127,7 +129,7 @@ const Projects = () => {
             <div key={proj._id} className="card" style={styles.projectCard}>
               <div style={styles.cardHeader}>
                 <h3 style={styles.projectName}>{proj.name}</h3>
-                <span className={`badge ${getStatusStyle(proj.status)}`}>{proj.status}</span>
+                <span className={`badge ${getStatusStyle(proj.status)}`}>{t(proj.status)}</span>
               </div>
               
               <div style={styles.cardBody}>
@@ -138,30 +140,30 @@ const Projects = () => {
                 
                 <div style={styles.infoRow}>
                   <DollarSign size={16} style={styles.icon} />
-                  <span>Budget: Rs {proj.budget.toLocaleString()}</span>
+                  <span>{t('Budget')}: Rs {proj.budget.toLocaleString(locale)}</span>
                 </div>
 
                 <div style={styles.infoRow}>
                   <DollarSign size={16} style={{ color: 'var(--primary-orange)' }} />
-                  <span>Spent: Rs {proj.spent.toLocaleString()}</span>
+                  <span>{t('Spent')}: Rs {proj.spent.toLocaleString(locale)}</span>
                 </div>
 
                 <div style={styles.infoRow}>
                   <DollarSign size={16} style={{ color: (proj.budget - proj.spent) >= 0 ? 'var(--success-green)' : 'var(--alert-red)' }} />
                   <span style={{ color: (proj.budget - proj.spent) >= 0 ? 'var(--success-green)' : 'var(--alert-red)', fontWeight: '600' }}>
-                    Remaining: Rs {(proj.budget - proj.spent).toLocaleString()}
+                    {t('Remaining')}: Rs {(proj.budget - proj.spent).toLocaleString(locale)}
                   </span>
                 </div>
                 
                 <div style={styles.infoRow}>
                   <Calendar size={16} style={styles.icon} />
-                  <span>Ends: {new Date(proj.endDate).toLocaleDateString()}</span>
+                  <span>{t('Ends')}: {new Date(proj.endDate).toLocaleDateString(locale)}</span>
                 </div>
 
                 {/* Progress bar */}
                 <div style={styles.progressSection}>
                   <div style={styles.progressLabels}>
-                    <span>Completion Progress</span>
+                    <span>{t('Completion Progress')}</span>
                     <span>{proj.progress}%</span>
                   </div>
                   <div style={styles.progressBarBg}>
@@ -176,7 +178,7 @@ const Projects = () => {
                   className="btn btn-outline w-full"
                 >
                   <PlayCircle size={16} />
-                  <span>Enter Site Dashboard</span>
+                  <span>{t('Enter Site Dashboard')}</span>
                 </button>
               </div>
             </div>
@@ -188,7 +190,7 @@ const Projects = () => {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2 style={{ marginBottom: '1rem' }}>Initialize New Project</h2>
+            <h2 style={{ marginBottom: '1rem' }}>{t('Initialize New Project')}</h2>
             <button onClick={() => setShowModal(false)} className="modal-close">×</button>
             
             {formError && (
@@ -199,11 +201,11 @@ const Projects = () => {
 
             <form onSubmit={handleCreateProject}>
               <div className="form-group">
-                <label>Project Site Name</label>
+                <label>{t('Project Site Name')}</label>
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="e.g. House No. 45 Phase 6"
+                  placeholder={t('e.g. House No. 45 Phase 6')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -211,11 +213,11 @@ const Projects = () => {
               </div>
 
               <div className="form-group">
-                <label>Location City/Address</label>
+                <label>{t('Location City/Address')}</label>
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="e.g. DHA, Karachi"
+                  placeholder={t('e.g. DHA, Karachi')}
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   required
@@ -223,11 +225,11 @@ const Projects = () => {
               </div>
 
               <div className="form-group">
-                <label>Allocated Budget (PKR)</label>
+                <label>{t('Allocated Budget (PKR)')}</label>
                 <input
                   type="number"
                   className="form-control"
-                  placeholder="e.g. 5000000"
+                  placeholder={t('e.g. 5000000')}
                   value={budget}
                   onChange={(e) => setBudget(e.target.value)}
                   required
@@ -236,7 +238,7 @@ const Projects = () => {
 
               <div className="grid grid-2" style={{ gap: '1rem' }}>
                 <div className="form-group">
-                  <label>Start Date</label>
+                  <label>{t('Start Date')}</label>
                   <input
                     type="date"
                     className="form-control"
@@ -246,7 +248,7 @@ const Projects = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Target End Date</label>
+                  <label>{t('Target End Date')}</label>
                   <input
                     type="date"
                     className="form-control"
@@ -259,10 +261,10 @@ const Projects = () => {
 
               <div style={styles.modalActions}>
                 <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline">
-                  Cancel
+                  {t('Cancel')}
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Create Project
+                  {t('Create Project')}
                 </button>
               </div>
             </form>

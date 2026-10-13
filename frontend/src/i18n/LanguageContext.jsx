@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { saveLanguage } from '../services/api';
 import { DEFAULT_LANGUAGE, LANGUAGE_CODES, SUPPORTED_LANGUAGES, languageMeta } from './languages';
 import { TRANSLATIONS } from './translations';
@@ -14,6 +14,7 @@ const readStoredLang = () => {
 
 export const LanguageProvider = ({ children }) => {
   const [lang, setLangState] = useState(readStoredLang);
+  const langRef = useRef(lang);
 
   useEffect(() => {
     const meta = languageMeta(lang);
@@ -22,8 +23,12 @@ export const LanguageProvider = ({ children }) => {
     localStorage.setItem(STORAGE_KEY, meta.code);
   }, [lang]);
 
+  // Changes the interface language everywhere and mirrors it onto the user's
+  // account, so the same preference follows them to another device.
   const setLang = useCallback((next) => {
     const meta = languageMeta(next);
+    if (meta.code === langRef.current) return;
+    langRef.current = meta.code;
     setLangState(meta.code);
     if (localStorage.getItem('token')) {
       saveLanguage(meta.code).catch(() => { /* preference still saved locally */ });
@@ -36,11 +41,11 @@ export const LanguageProvider = ({ children }) => {
     if (!raw) return;
     try {
       const { language } = JSON.parse(raw);
-      if (LANGUAGE_CODES.includes(language) && language !== lang) setLangState(language);
+      if (LANGUAGE_CODES.includes(language)) setLang(language);
     } catch {
       /* malformed user cache — keep local preference */
     }
-  }, []);
+  }, [setLang]);
 
   const t = useCallback(
     (key, vars) => {
@@ -52,7 +57,16 @@ export const LanguageProvider = ({ children }) => {
   );
 
   const value = useMemo(
-    () => ({ lang, setLang, t, languages: SUPPORTED_LANGUAGES, dir: languageMeta(lang).dir, speechLocale: languageMeta(lang).speechLocale }),
+    () => ({
+      lang,
+      setLang,
+      t,
+      languages: SUPPORTED_LANGUAGES,
+      dir: languageMeta(lang).dir,
+      speechLocale: languageMeta(lang).speechLocale,
+      // Urdu-script users get Urdu digits/month names; Roman Urdu stays Latin.
+      locale: lang === 'arab-ur' ? 'ur-PK' : 'en-PK',
+    }),
     [lang, setLang, t]
   );
 
