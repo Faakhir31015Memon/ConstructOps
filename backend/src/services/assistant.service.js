@@ -210,6 +210,7 @@ const PHRASES = {
     thanks: 'You are welcome! Anything else about your workspace?',
     bye: 'Goodbye! Your workspace stays right here when you are back.',
     projectDetail: 'Project detail:',
+    assignedTitle: 'Your assigned projects:',
     noLocation: 'no location',
     status: 'status',
     complete: 'complete',
@@ -237,6 +238,7 @@ const PHRASES = {
     noProjectContractor: 'You are not assigned to any project yet, so tracking is empty. Confirm assignment with your owner/manager.',
     companySpend: (s, b, r, a) => `Company total spend: ${rs(s)} spent out of ${rs(b)} budget — ${rs(r)} remaining. Approved expenses: ${rs(a)}.`,
     pendingCount: (n, amt) => `${n} expenses awaiting approval (${rs(amt)} total):`,
+    pendingHowTo: '\n\nApprove or reject from Project Detail or the Dashboard.',
     pendingNone: 'Good news — no expense is awaiting approval.',
     myPendingNone: 'You have no expense awaiting approval.',
     myPendingTitle: 'Your pending expenses:',
@@ -263,6 +265,7 @@ const PHRASES = {
     thanks: 'Koi baat nahi! Aur kuch poochna ho to main hazir hoon.',
     bye: 'Khuda Hafiz! Aap ka workspace yahan safe hai, jab aayein continue kar lein.',
     projectDetail: 'Project ki detail:',
+    assignedTitle: 'Aapke assigned projects:',
     noLocation: 'location nahi',
     status: 'status',
     complete: 'complete',
@@ -290,6 +293,7 @@ const PHRASES = {
     noProjectContractor: 'Aap abhi kisi project par assigned nahi hain, is liye tracking data khali hai. Owner/manager se assignment confirm karein.',
     companySpend: (s, b, r, a) => `Company ke total kharch: ${rs(b)} budget me se ${rs(s)} spent — bacha hua ${rs(r)}. Approved expenses: ${rs(a)}.`,
     pendingCount: (n, amt) => `${n} expenses approval ke liye pending hain (${rs(amt)} total):`,
+    pendingHowTo: '\n\nProject Detail ya Dashboard se approve/reject kar sakte hain.',
     pendingNone: 'Shukar hai — koi expense approval ke liye pending nahi hai.',
     myPendingNone: 'Aap ka koi expense approval ke liye pending nahi hai.',
     myPendingTitle: 'Aapke pending expenses:',
@@ -408,84 +412,73 @@ const statusLine = (context, t) => {
 // Deterministic fallback used when no LLM key is configured (or the LLM call failed).
 // Detects ALL matching intents (not just the first) so compound questions like
 // "kitne workers hajir hain aur total expenses kitni hui" get one combined answer.
-export const answerWithKnowledge = (question, context) => {
-  const q = question.toLowerCase().trim();
-  const isEnglish = !has(q, 'kaisa', 'kaisay', 'kitna', 'kitne', 'bacha', 'hain', 'hai', 'kya', 'kaam', 'alaikum', 'mera', 'aap', 'baki', 'ho gaye', 'pooch');
+// Every connective word comes from the phrase table, so the answer language
+// follows the user's selection instead of the language they typed in.
+export const answerWithKnowledge = (question, context, lang = 'latn-ur') => {
+  const q = String(question || '').toLowerCase().trim();
+  const t = P(normalizeLang(lang));
+  const greeted = has(q, 'salam', 'assalam', 'asslamo', 'aslamo', 'السلام', 'سلام', 'ہیلو', 'hello', 'hi ', 'hey', 'namaste');
 
-  // --- Conversational layer (small talk, both languages) ---
-  if (has(q, 'hello', 'hi ', 'hey', 'salam', 'assalam', 'asslamo', 'aslamo', 'namaste') && q.length <= 25) {
-    return isEnglish
-      ? `Hello ${context.userName}! I am the ConstructOps assistant — I can see your own workspace (projects, budgets, approvals, alerts). Ask me anything, e.g. "how many projects are pending?"`
-      : `Walaikum Assalam ${context.userName}! Main ConstructOps assistant hoon — aap ke apne workspace (projects, budget, approvals, alerts) ka data dekh kar jawab deta hoon. Poochein, misaal: "kitne projects complete ho gaye?"`;
+  // --- Conversational layer (small talk) ---
+  if (greeted && q.length <= 30) return t.hello(context.userName);
+  if (has(q, 'how are you', 'kaisay ho', 'kaisa ho', 'kaise ho', 'kiya hall', 'kya haal', 'hal chaal', 'how r u', 'you fine', 'کیسے')) {
+    return has(q, 'salam', 'assalam', 'السلام') ? t.howAreYouSalam(context.userName) : t.howAreYou;
   }
-  if (has(q, 'how are you', 'kaisay ho', 'kaisa ho', 'kaise ho', 'kiya hall', 'kya haal', 'hal chaal', 'how r u', 'you fine')) {
-    return !has(q, 'salam', 'alaikum') && isEnglish
-      ? `I am doing great, thank you for asking! Ready to help with your workspace. Tip: ask "give me a project tracking summary".`
-      : `Walaikum Assalam ${context.userName}, main bilkul theek hoon, shukriya! Aap ke workspace ka data ready hai — poochein "project tracking summary do" ya "kitne projects baki hain".`;
+  if (has(q, 'i am fine', "i'm fine", 'main theek', 'mai theek', 'main akora', 'sab theek', 'fine shukriya', 'all good', 'میں ٹھیک')) {
+    return t.imFine;
   }
-  if (has(q, 'i am fine', "i'm fine", 'main theek', 'mai theek', 'main akora', 'sab theek', 'fine shukriya', 'all good')) {
-    return `Badhiya hai! Kisi bhi project ka budget, progress ya pending approval ka hal poochein — main sirf aap ka apna data parhta hoon.`;
-  }
-  if (has(q, 'thank', 'shukriya', 'thanks', 'shukria', 'bohat shukar') && q.length <= 30) {
-    return isEnglish ? 'You are welcome! Anything else about your workspace?' : 'Koi baat nahi! Aur kuch poochna ho to main hazir hoon.';
-  }
-  if (has(q, 'bye', 'khuda hafiz', 'allah hafiz', 'good night')) {
-    return isEnglish ? 'Goodbye! Your workspace stays right here when you are back.' : 'Khuda Hafiz! Aap ka workspace yahan safe hai, jab aayein continue kar lein.';
-  }
+  if (has(q, 'thank', 'shukriya', 'thanks', 'shukria', 'bohat shukar', 'شکریہ') && q.length <= 30) return t.thanks;
+  if (has(q, 'bye', 'khuda hafiz', 'allah hafiz', 'good night', 'خدا حافظ')) return t.bye;
 
   const answers = [];
 
   // Project-specific focus wins over generic intents.
   const focused = mentionedProjects(q, context.projects || context.assignedProjects || []);
   if (focused.length) {
-    answers.push(`Project detail:\n${focused.map(projectLine).join('\n')}`);
+    answers.push(`${t.projectDetail}\n${focused.map((p) => projectLine(p, t)).join('\n')}`);
   }
 
   let overviewShown = false;
   let trackingShown = false;
-  if (!focused.length && has(q, 'overview', 'hal', 'haal', 'kya chal', "what's up", 'sab kuch', 'meri company', 'company ka')) {
-    const ov = overviewAnswer(context);
+  if (!focused.length && has(q, 'overview', 'hal', 'haal', 'kya chal', "what's up", 'sab kuch', 'meri company', 'company ka', 'جائزہ', 'کیا چل')) {
+    const ov = overviewAnswer(context, t);
     if (ov) {
       answers.push(ov);
       overviewShown = true;
     }
   }
 
-  if (!focused.length && has(q, 'mera kaam', 'apna kaam', 'work status', 'kaam kaisa', 'abhi kya', 'kitna bacha')) {
-    const line = statusLine(context);
+  if (!focused.length && has(q, 'mera kaam', 'apna kaam', 'work status', 'kaam kaisa', 'abhi kya', 'kitna bacha', 'میرا کام')) {
+    const line = statusLine(context, t);
     if (line) answers.push(line);
   }
 
-  if (!focused.length && has(q, 'project', 'assigned', 'site', 'kaun sa project', 'project list')) {
+  if (!focused.length && has(q, 'project', 'assigned', 'site', 'kaun sa project', 'project list', 'پروجیکٹ', 'تفویض')) {
     const list = context.role === 'contractor' ? context.assignedProjects : context.projects;
     if (!list?.length) {
-      answers.push(context.role === 'contractor'
-        ? 'Aap abhi kisi project par assigned nahi hain. Owner/manager se project assignment confirm karein.'
-        : 'Abhi koi project nahi bana. Projects screen se pehla project create karein — budget aur dates ke saath.');
+      answers.push(context.role === 'contractor' ? t.noProjectContractor : t.noProjectOwner);
     } else if (context.role === 'contractor') {
-      answers.push(`Aapke assigned projects:\n${list.map((p) => `- ${p.name} (${p.location}) — ${p.progressPercent}% complete, status: ${p.status}`).join('\n')}`);
+      answers.push(`${t.assignedTitle}\n${list.map((p) => `- ${p.name} (${p.location || t.noLocation}) — ${p.progressPercent ?? 0}% ${t.complete}, ${t.status}: ${p.status}`).join('\n')}`);
     }
   }
 
   // Project tracking analytics — counts by status + per-project progress.
   // Uses only what this user may see: company projects (owner/manager/
   // accountant) or the contractor's assigned projects.
-  if (!focused.length && has(q, 'kitne project', 'kitna project', 'how many project', 'projects are complete', 'project is complete', 'projects complete', 'project complete', 'complete ho', 'bacha ha', 'baki ha', 'remain', 'pending project', 'are pending', 'is pending', 'paused', 'hold mein', 'progress', 'percent', 'tracking')) {
+  if (!focused.length && has(q, 'kitne project', 'kitna project', 'how many project', 'projects are complete', 'project is complete', 'projects complete', 'project complete', 'complete ho', 'bacha ha', 'baki ha', 'remain', 'pending project', 'are pending', 'is pending', 'paused', 'hold mein', 'progress', 'percent', 'tracking', 'کتنے پروجیکٹ', 'مکمل', 'باقی', 'ٹریکنگ', 'فیصد', 'پروگریس')) {
     const ps = context.portfolioStats;
     if (ps) {
-      const scope = context.role === 'contractor' ? 'Aap ke assigned projects' : 'Aap ke projects';
+      const scope = context.role === 'contractor' ? t.scopeAssigned : t.scopeCompany;
       if (!ps.total) {
-        answers.push(context.role === 'contractor'
-          ? 'Aap abhi kisi project par assigned nahi hain, is liye tracking data khali hai. Owner/manager se assignment confirm karein.'
-          : 'Abhi tak koi project nahi bana. Projects screen se naya project add karein — us ke baad main live tracking de sakunga.');
+        answers.push(context.role === 'contractor' ? t.noProjectContractor : t.noProjectOwner);
       } else {
         const lines = [
-          `${scope} ki tracking:`,
-          `- Total: ${ps.total} — Active: ${ps.active} — Complete: ${ps.completed} — Paused/on-hold: ${ps.paused}`,
-          `- Overall progress: ${ps.averageProgressPercent}% (har project ke progress ka average)`,
+          t.trackingTitle(scope),
+          `- ${t.trackingCounts(ps.total, ps.active, ps.completed, ps.paused)}`,
+          `- ${t.trackingAvg(ps.averageProgressPercent)}`,
         ];
         if (ps.total > 1) {
-          lines.push(`- Detail:\n${ps.perProject.map((p) => `  · ${p.name} — ${p.progressPercent}% (${p.status})`).join('\n')}`);
+          lines.push(`- ${t.trackingDetail}\n${ps.perProject.map((p) => `  · ${p.name} — ${p.progressPercent}% (${p.status})`).join('\n')}`);
         }
         answers.push(lines.join('\n'));
         trackingShown = true;
@@ -493,80 +486,88 @@ export const answerWithKnowledge = (question, context) => {
     }
   }
 
-  if (has(q, 'budget', 'spent', 'remaining', 'kharch', 'total', 'cost', 'financial', 'profit', 'paisa', 'paise')) {
+  if (has(q, 'budget', 'spent', 'remaining', 'kharch', 'total', 'cost', 'financial', 'profit', 'paisa', 'paise', 'بجٹ', 'خرچ', 'رقم', 'پیسہ', 'کل')) {
     if (context.role === 'contractor') {
       const m = context.myExpenseTotals || {};
-      answers.push(`Aapke expenses ka total: approved ${rs(m.approvedPKR)}, pending ${rs(m.pendingPKR)}, rejected ${rs(m.rejectedPKR)} (${m.submittedCount || 0} submissions).`);
+      answers.push(t.contractorExpTotal(m.approvedPKR, m.pendingPKR, m.rejectedPKR, m.submittedCount));
     } else if (!focused.length && !overviewShown) {
-      const t = context.companyTotals;
-      if (t) {
-        answers.push(`Company ke total kharch: ${rs(t.spentPKR)} spent out of ${rs(t.budgetPKR)} budget — bacha hua ${rs(t.remainingPKR)}. Approved expenses: ${rs(t.approvedExpensePKR)}.`);
+      const c = context.companyTotals;
+      if (c) {
+        answers.push(t.companySpend(c.spentPKR, c.budgetPKR, c.remainingPKR, c.approvedExpensePKR));
       } else if (!context.projects?.length) {
-        answers.push('Abhi koi project nahi bana. Projects screen se pehla project create karein.');
+        answers.push(t.noProjectOwner);
       }
     }
   }
 
-  if (!trackingShown && has(q, 'pending', 'approval', 'approve', 'review')) {
+  if (!trackingShown && has(q, 'pending', 'approval', 'approve', 'review', 'منظوری', 'التوا')) {
     const pend = context.pendingExpenses || [];
     if (context.role === 'contractor') {
       const mine = (context.myExpenses || []).filter((e) => e.status === 'pending');
       answers.push(mine.length
-        ? `Aapke pending expenses:\n${mine.map((e) => `- ${e.description}: ${rs(e.amountPKR)} (${e.project})`).join('\n')}\n\nOwner ke approve karne tak ye project kharch mein count nahi hote.`
-        : 'Aap ka koi expense approval ke liye pending nahi hai.');
+        ? `${t.myPendingTitle}\n${mine.map((e) => `- ${e.description}: ${rs(e.amountPKR)} (${e.project})`).join('\n')}${t.myPendingNote}`
+        : t.myPendingNone);
     } else {
       answers.push(pend.length
-        ? `${(context.companyTotals?.pendingExpenseCount ?? pend.length)} expenses approval ke liye pending hain (${rs(context.companyTotals?.pendingExpensePKR)} total):\n${pend.slice(0, 8).map((e) => `- ${e.description}: ${rs(e.amountPKR)} (${e.project})`).join('\n')}\n\nProject Detail ya Dashboard se approve/reject kar sakte hain.`
-        : 'Shukar hai — koi expense approval ke liye pending nahi hai.');
+        ? `${t.pendingCount(context.companyTotals?.pendingExpenseCount ?? pend.length, context.companyTotals?.pendingExpensePKR)}\n${pend.slice(0, 8).map((e) => `- ${e.description}: ${rs(e.amountPKR)} (${e.project})`).join('\n')}${t.pendingHowTo}`
+        : t.pendingNone);
     }
   }
 
-  if (context.role === 'contractor' && has(q, 'meri expense', 'my expense', 'expense dikha', 'expenses dikha')) {
+  if (context.role === 'contractor' && has(q, 'meri expense', 'my expense', 'expense dikha', 'expenses dikha', 'میرے اخراجات')) {
     const list = context.myExpenses || [];
     answers.push(list.length
-      ? `Aapke expenses:\n${list.map((e) => `- ${e.description}: ${rs(e.amountPKR)} — ${String(e.status).toUpperCase()} (${e.project})`).join('\n')}`
-      : 'Aapne abhi tak koi expense submit nahi kiya. Project Detail screen se apna expense (receipt ke saath) submit karein — owner approval ke baad wo project ke kharch mein count hota hai.');
+      ? `${t.contractorExpTitle}\n${list.map((e) => `- ${e.description}: ${rs(e.amountPKR)} — ${String(e.status).toUpperCase()} (${e.project})`).join('\n')}`
+      : t.contractorExpEmpty);
   }
 
-  if (has(q, 'subscription', 'plan', 'trial', 'expiry', 'kitne din', 'renew', 'billing', 'payment gateway', 'package')) {
+  if (has(q, 'subscription', 'plan', 'trial', 'expiry', 'kitne din', 'renew', 'billing', 'payment gateway', 'package', 'سبسکرپشن', 'پلان', 'تجدید')) {
     const s = context.subscription;
     if (s) {
-      answers.push(s.isExpired
-        ? `Aap ka ${s.plan} plan expire ho chuka hai. Billing/Reactivation se plan choose kar ke bank transfer ya JazzCash/Easypaisa se pay karein — admin approval ke baad foran access restore ho jata hai.`
-        : `Current plan: ${s.plan} (${s.status}) — ${s.daysRemaining} days remaining. Renewal Billing page par hai.`);
+      answers.push(s.isExpired ? t.subExpiredAns : t.subActive(s.plan, s.status, s.daysRemaining));
     } else if (context.role !== 'contractor') {
-      answers.push('Is account par koi company subscription nahi mili.');
+      answers.push(t.subNone);
     }
   }
 
-  if (has(q, 'alert', 'warning', 'risk', 'masla', 'issue', 'khatra')) {
+  if (has(q, 'alert', 'warning', 'risk', 'masla', 'issue', 'khatra', 'الارٹ', 'مسئلہ', 'خطرہ')) {
     if (context.role === 'contractor') {
-      answers.push('Alerts owner/manager ke workspace mein hotay hain — site masla ho to daily report mein likhein ya supervisor ko batayein.');
+      answers.push(t.alertsContractor);
     } else {
       const alerts = context.unreadAlerts || [];
       answers.push(alerts.length
-        ? `${context.companyTotals?.unreadAlertCount ?? alerts.length} unread alerts:\n${alerts.map((a) => `- [${String(a.severity).toUpperCase()}] ${a.message}`).join('\n')}`
-        : 'Abhi koi unread alert nahi hai — sab projects theek chal rahe hain.');
+        ? `${t.alertsTitle(context.companyTotals?.unreadAlertCount ?? alerts.length)}\n${alerts.map((a) => `- [${String(a.severity).toUpperCase()}] ${a.message}`).join('\n')}`
+        : t.alertsNone);
     }
   }
 
-  if (has(q, 'worker', 'mazdoor', 'labor', 'staff', 'attendance', 'present', 'hajir', 'hazir')) {
+  if (has(q, 'worker', 'mazdoor', 'labor', 'staff', 'attendance', 'present', 'hajir', 'hazir', 'ورکر', 'حاضری', 'مزدور', 'عملہ')) {
     answers.push(context.role === 'contractor'
-      ? 'Attendance aur worker data sirf owner/manager ke workspace mein hota hai. Site records ke liye apne supervisor se rabta karein.'
-      : `Aap ke workspace par ${context.companyTotals?.workerCount ?? 0} workers registered hain aur ${context.companyTotals?.approvedExpensePKR !== undefined ? rs(context.companyTotals.approvedExpensePKR) : '—'} approved expenses record hue hain. Workers screen se daily attendance check-in karein.`);
+      ? t.workersContractor
+      : t.workersLine(context.companyTotals?.workerCount ?? 0, context.companyTotals?.approvedExpensePKR ?? 0));
   }
 
-  if (!trackingShown && !overviewShown && has(q, 'how', 'kaise', 'kis tarah', 'add ', 'create', 'export', 'report', 'material', 'invite', 'start', 'guide', 'madad', 'help')) {
-    answers.push('Aham screens: Projects (naya project + budget), Project Detail (expenses submit/approve, daily reports), Workers (team + attendance), Materials (stock IN/OUT), Reports (PDF/Excel export, correct totals ke saath), Alerts (budget exceed warnings), Billing (plan, bank transfer ya live JazzCash/Easypaisa payment). Koi ek step poochein to main guide kar dunga.');
+  if (!trackingShown && !overviewShown && has(q, 'how', 'kaise', 'kis tarah', 'add ', 'create', 'export', 'report', 'material', 'invite', 'start', 'guide', 'madad', 'help', 'کیسے', 'مدد', 'رپورٹ')) {
+    answers.push(t.guide);
   }
 
-  if (!answers.length) {
-    return 'Main budget, pending approvals, alerts, workers, subscription aur daily workflows ke baare mein apne workspace ke real data se jawab de sakta hoon. Misaal: "mera kaam kis level par hai?", "total kharch kitna hua?", "A1 Tower ka remaining budget", ya "pending expenses dikha do".';
-  }
+  if (!answers.length) return t.fallback;
   return answers.join('\n\n');
 };
 
-export const roleSuggestions = (role) =>
-  role === 'contractor'
-    ? ['Mere assigned projects ki tracking', 'Mere expenses ki status', 'Naya expense kaise submit karun?']
-    : ['Project tracking summary', 'Kitne projects complete/pendings hain?', 'Company ka total kharch', 'Pending expense approvals', 'Unread alerts'];
+export const roleSuggestions = (role, lang = 'latn-ur') => {
+  const l = normalizeLang(lang);
+  const map = {
+    contractor: {
+      en: ['Tracking of my assigned projects', 'Status of my expenses', 'How do I submit a new expense?'],
+      'latn-ur': ['Mere assigned projects ki tracking', 'Mere expenses ki status', 'Naya expense kaise submit karun?'],
+      'arab-ur': ['میرے تفویض شدہ پروجیکٹس کی ٹریکنگ', 'میرے اخراجات کی حالت', 'نیا خرچ کیسے جمع کروں؟'],
+    },
+    other: {
+      en: ['Project tracking summary', 'How many projects are complete/pending?', 'Total company spend', 'Pending expense approvals', 'Unread alerts'],
+      'latn-ur': ['Project tracking summary', 'Kitne projects complete/pendings hain?', 'Company ka total kharch', 'Pending expense approvals', 'Unread alerts'],
+      'arab-ur': ['پروجیکٹ ٹریکنگ کا خلاصہ', 'کتنے پروجیکٹ مکمل / زیرِ التوا ہیں؟', 'کمپنی کا کل خرچ', 'زیرِ التوا اخراجات', 'ن پڑھے الارٹس'],
+    },
+  };
+  return (role === 'contractor' ? map.contractor : map.other)[l];
+};
