@@ -14,6 +14,7 @@ import {
   addExpense, 
   getReports, 
   createReport, 
+  uploadReportPhotos,
   getAlerts, 
   markAlertRead,
   updateProject,
@@ -369,16 +370,30 @@ const ProjectDetail = () => {
     }
   };
 
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-    
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setRImages(prev => [...prev, reader.result]);
-      };
-      reader.readAsDataURL(file);
-    });
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+
+    const tooBig = files.find((f) => f.size > 5 * 1024 * 1024);
+    if (tooBig) {
+      alert(t('Each photo must be under 5 MB'));
+      return;
+    }
+
+    setUploadingPhotos(true);
+    try {
+      const res = await uploadReportPhotos(files.slice(0, 6));
+      if (res.success) {
+        setRImages((prev) => [...prev, ...res.urls].slice(0, 10));
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Photo upload failed');
+    } finally {
+      setUploadingPhotos(false);
+    }
   };
 
   const handleRemoveImage = (indexToRemove) => {
@@ -428,17 +443,6 @@ const ProjectDetail = () => {
         alert('Failed to update project status');
       }
     }
-  };
-
-  const handleVoiceSimulate = (phrase) => {
-    setIsRecording(true);
-    setSelectedUrduPhrase(phrase.urdu);
-    
-    // Simulate speech-to-text translation lag
-    setTimeout(() => {
-      setRDesc(phrase.eng);
-      setIsRecording(false);
-    }, 1500);
   };
 
   if (loading) return <div style={styles.loading}>{t('Loading site workspace...')}</div>;
@@ -1797,16 +1801,8 @@ const ProjectDetail = () => {
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', margin: 0 }}
                       >
                         <Camera size={18} />
-                        <span>{t('Choose Photo(s)')}</span>
+                        <span>{uploadingPhotos ? t('Uploading...') : t('Choose Photo(s)')}</span>
                       </label>
-                      <button 
-                        type="button" 
-                        onClick={() => setRImages(['https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=600&q=80'])}
-                        className="btn btn-outline"
-                        style={{ padding: '0.5rem 0.75rem' }}
-                      >
-                        Mock URL
-                      </button>
                     </div>
 
                     {/* Preview Selected Photos */}

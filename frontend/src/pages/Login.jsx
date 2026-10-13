@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login, loginAdmin } from '../services/api';
+import { login } from '../services/api';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
 
@@ -27,12 +27,8 @@ const Login = () => {
 
     try {
       let data;
-      const cleanEmail = (email || '').trim().toLowerCase();
-      if (cleanEmail === 'constops@admin.com') {
-        data = await loginAdmin(email, password);
-      } else {
-        data = await login(email, password);
-      }
+      // Admin login is detected server-side (env-configured creds) via the same route.
+      data = await login(email, password);
 
       if (data.success) {
         localStorage.setItem('token', data.token);

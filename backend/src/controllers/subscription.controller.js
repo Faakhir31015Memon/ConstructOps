@@ -5,6 +5,7 @@ import {
   getCompanySubscriptionDetails,
   PLAN_DURATIONS,
   PLAN_PRICES,
+  PLAN_LIMITS,
   SUBSCRIPTION_PLANS,
   PAYMENT_METHODS,
   getGatewayConfig,
@@ -22,8 +23,9 @@ export const getPlans = async (req, res) => {
       id: plan,
       amountPKR: PLAN_PRICES[plan],
       days: PLAN_DURATIONS[plan] / (24 * 60 * 60 * 1000),
+      limits: PLAN_LIMITS[plan],
     }));
-    res.json({ success: true, plans, gateway: getGatewayConfig() });
+    res.json({ success: true, plans, trialLimits: PLAN_LIMITS.trial, gateway: getGatewayConfig() });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }

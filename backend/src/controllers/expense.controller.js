@@ -4,6 +4,11 @@ import Project from '../models/project.model.js';
 import Alert from '../models/alert.model.js';
 import ProjectAssignment from '../models/projectAssignment.model.js';
 import { pick } from '../utils/pick.js';
+import { parsePagination, paginationMeta } from '../utils/pagination.js';
+import { toObjectId, toSafeEnum } from '../middleware/sanitize.middleware.js';
+
+const EXPENSE_CATEGORIES = ['material', 'labor', 'machinery', 'transport', 'subcontractor', 'utilities', 'permits', 'safety', 'misc'];
+const EXPENSE_STATUSES = ['pending', 'approved', 'rejected'];
 
 // Helper: Recalculate and synchronize project spent based ONLY on approved expenses
 const syncProjectSpent = async (projectId) => {
@@ -55,7 +60,13 @@ export const addExpense = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Expense amount must be a positive number' });
     }
 
-    const project = await Project.findById(projectId);
+    const projectObjectId = toObjectId(projectId);
+    const safeCategory = toSafeEnum(category, EXPENSE_CATEGORIES);
+    if (!projectObjectId || !safeCategory) {
+      return res.status(400).json({ success: false, message: 'Invalid projectId or category' });
+    }
+
+    const project = await Project.findById(projectObjectId);
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
@@ -68,7 +79,7 @@ export const addExpense = async (req, res) => {
     // Contractor scoping check
     if (req.user.role === 'contractor') {
       const assignment = await ProjectAssignment.findOne({
-        projectId,
+        projectId: projectObjectId,
         contractorId: req.user._id,
         status: 'active',
       });
@@ -85,8 +96,8 @@ export const addExpense = async (req, res) => {
 
     const expense = await Expense.create({
       companyId: project.companyId,
-      projectId,
-      category,
+      projectId: projectObjectId,
+      category: safeCategory,
       amount: numAmount,
       description,
       date: date || new Date(),
@@ -99,11 +110,11 @@ export const addExpense = async (req, res) => {
 
     // If auto-approved, update project spent
     if (isAutoApproved) {
-      await syncProjectSpent(projectId);
+      await syncProjectSpent(projectObjectId);
     } else {
       // Notify owner through an alert
       await Alert.create({
-        projectId,
+        projectId: projectObjectId,
         type: 'budget',
         message: `New expense submitted by ${req.user.name} for Rs ${numAmount.toLocaleString()} (${category}). Pending Owner review.`,
         severity: 'low',
@@ -128,11 +139,12 @@ export const getExpenses = async (req, res) => {
   const { projectId, category, status } = req.query;
 
   try {
-    if (!projectId) {
-      return res.status(400).json({ success: false, message: 'Please specify projectId parameter' });
+    const projectObjectId = toObjectId(projectId);
+    if (!projectObjectId) {
+      return res.status(400).json({ success: false, message: 'Please specify a valid projectId parameter' });
     }
 
-    const project = await Project.findById(projectId);
+    const project = await Project.findById(projectObjectId);
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
@@ -145,7 +157,7 @@ export const getExpenses = async (req, res) => {
     // Contractor scoping check
     if (req.user.role === 'contractor') {
       const assignment = await ProjectAssignment.findOne({
-        projectId,
+        projectId: projectObjectId,
         contractorId: req.user._id,
         status: 'active',
       });
@@ -154,16 +166,24 @@ export const getExpenses = async (req, res) => {
       }
     }
 
-    const query = { projectId };
-    if (category) query.category = category;
-    if (status) query.status = status;
+    const query = { projectId: projectObjectId };
+    const safeCategory = toSafeEnum(category, EXPENSE_CATEGORIES);
+    if (safeCategory) query.category = safeCategory;
+    const safeStatus = toSafeEnum(status, EXPENSE_STATUSES);
+    if (safeStatus) query.status = safeStatus;
 
-    const expenses = await Expense.find(query)
-      .sort({ date: -1, createdAt: -1 })
-      .populate('addedBy', 'name role email')
-      .populate('reviewedBy', 'name role');
+    const { page, limit, skip } = parsePagination(req);
+    const [expenses, total] = await Promise.all([
+      Expense.find(query)
+        .sort({ date: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('addedBy', 'name role email')
+        .populate('reviewedBy', 'name role'),
+      Expense.countDocuments(query),
+    ]);
 
-    res.json({ success: true, expenses });
+    res.json({ success: true, expenses, pagination: paginationMeta(page, limit, total) });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }

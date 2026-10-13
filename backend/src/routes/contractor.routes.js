@@ -10,6 +10,7 @@ import {
   getPaymentsByProject,
 } from '../controllers/contractor.controller.js';
 import { protect, authorize } from '../middleware/auth.middleware.js';
+import { limitUsers } from '../middleware/planLimit.middleware.js';
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.use(protect);
 // Contractor accounts & assignments
 router
   .route('/')
-  .post(authorize('owner', 'manager'), createContractor)
+  .post(authorize('owner', 'manager'), limitUsers, createContractor)
   .get(authorize('owner', 'manager'), getCompanyContractors);
 
 router.post('/assign', authorize('owner', 'manager'), assignContractorToProject);

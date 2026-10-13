@@ -227,6 +227,16 @@ export const getReports = async (projectId) => {
   return data;
 };
 
+// Multipart photo upload — returns { urls: ['/uploads/...'] }
+export const uploadReportPhotos = async (files) => {
+  const formData = new FormData();
+  files.forEach((file) => formData.append('images', file));
+  const { data } = await API.post('/uploads', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+};
+
 export const createReport = async (reportData) => {
   const { data } = await API.post('/reports', reportData);
   return data;

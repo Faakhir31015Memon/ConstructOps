@@ -22,6 +22,8 @@ const muteConsole = () => {
 
 export const initAntiInspect = () => {
   if (typeof window === 'undefined') return;
+  // Dev builds must keep console + error overlays fully working.
+  if (!import.meta.env.PROD) return;
 
   muteConsole();
   window.addEventListener('error', (e) => { e.preventDefault(); }, true);

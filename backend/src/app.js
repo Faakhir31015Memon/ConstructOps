@@ -1,8 +1,12 @@
+import './config/env.js';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import connectDB from './config/db.js';
+import sanitizeReq from './middleware/sanitize.middleware.js';
+import { UPLOAD_DIR } from './routes/upload.routes.js';
 
 // Import Route Handlers
 import authRoutes from './routes/auth.routes.js';
@@ -19,8 +23,7 @@ import exportRoutes from './routes/export.routes.js';
 import subscriptionRoutes from './routes/subscription.routes.js';
 import billingRoutes from './routes/billing.routes.js';
 import assistantRoutes from './routes/assistant.routes.js';
-
-dotenv.config();
+import uploadRoutes from './routes/upload.routes.js';
 
 const app = express();
 
@@ -46,12 +49,19 @@ app.use(
   }),
 );
 
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Referrer-Policy', 'no-referrer');
-  next();
-});
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+// Global + brute-force protection
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 600,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests, please try again later' },
+}));
+
+// Reject Mongo operator injection ($ne, $gt, dot-paths) in query/body before any controller runs.
+app.use(sanitizeReq);
 
 // Keep the exact raw body for webhook signature verification (payment gateway HMAC).
 app.use(express.json({ limit: '10mb', verify: (req, res, buf) => { req.rawBody = buf.toString('utf8'); } }));
@@ -69,6 +79,9 @@ app.get('/api/v1/health', (req, res) => {
     timestamp: new Date(),
   });
 });
+
+// Uploaded report photos are served as static files (referenced by URL, never base64 in JSON).
+app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d', immutable: true }));
 
 // A serverless invocation is fresh per cold start, so the connection opens on the
 // first request that needs it rather than at module load.
@@ -96,6 +109,7 @@ app.use('/api/v1/export', exportRoutes);
 app.use('/api/v1/subscription', subscriptionRoutes);
 app.use('/api/v1/billing', billingRoutes);
 app.use('/api/v1/assistant', assistantRoutes);
+app.use('/api/v1/uploads', uploadRoutes);
 
 // Error Handling Middleware
 app.use((req, res, next) => {

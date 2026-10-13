@@ -16,7 +16,9 @@ import {
 import { submitSubscriptionPayment, getSubscriptionPlans, getPakBanks } from '../services/api';
 import { useLang } from '../i18n/LanguageContext';
 
-const PLANS = [
+// Presentation copy only. Prices, durations and limits come from
+// GET /subscription/plans — the backend is the single source of truth.
+const FALLBACK_PLANS = [
   {
     id: '1_month',
     name: '1 Month Plan',
@@ -61,7 +63,7 @@ const PLANS = [
       'Everything in 6 Months Plan',
       '1 Year Uninterrupted Workspace Access',
       'Complete Construction Analytics & PDF Export',
-      'Unlimited Team & Contractor Accounts',
+      'Up to 15 sites & 50 team members',
       'Dedicated VIP Support & Auto-Backups',
     ],
   },
@@ -89,6 +91,7 @@ const SubscriptionModal = ({
   const [selectedPlan, setSelectedPlan] = useState('6_months');
   const [selectedMethod, setSelectedMethod] = useState('easypaisa');
   const [gateway, setGateway] = useState(null);
+  const [plans, setPlans] = useState(FALLBACK_PLANS);
   const [transactionId, setTransactionId] = useState('');
   const [cardHolderName, setCardHolderName] = useState('');
   const [cardNumber, setCardNumber] = useState('');
@@ -105,7 +108,17 @@ const SubscriptionModal = ({
   useEffect(() => {
     if (isOpen) {
       getSubscriptionPlans()
-        .then((res) => { if (res.success) setGateway(res.gateway); })
+        .then((res) => {
+          if (res.success) {
+            setGateway(res.gateway);
+            if (Array.isArray(res.plans)) {
+              setPlans(FALLBACK_PLANS.map((p) => {
+                const srv = res.plans.find((s) => s.id === p.id);
+                return srv ? { ...p, amountPKR: srv.amountPKR, duration: `${srv.days} Days Access`, limits: srv.limits } : p;
+              }));
+            }
+          }
+        })
         .catch(() => { /* gateway info is optional */ });
       getPakBanks()
         .then((res) => { if (res.success) setBanks(res.banks || []); })
@@ -123,7 +136,7 @@ const SubscriptionModal = ({
 
   if (!isOpen) return null;
 
-  const currentPlan = PLANS.find((p) => p.id === selectedPlan);
+  const currentPlan = plans.find((p) => p.id === selectedPlan);
 
   const handleSubmitPayment = async (payVia = 'manual') => {
     setLoading(true);
@@ -237,7 +250,7 @@ const SubscriptionModal = ({
 
       {/* Plans Grid */}
       <div style={styles.plansGrid}>
-        {PLANS.map((plan) => {
+        {plans.map((plan) => {
           const isSelected = selectedPlan === plan.id;
           return (
             <div
@@ -283,7 +296,10 @@ const SubscriptionModal = ({
               </div>
 
               <div style={styles.featureList}>
-                {plan.features.map((feat, idx) => (
+                {(plan.limits
+                  ? [...plan.features, `${plan.limits.maxProjects} active sites • ${plan.limits.maxUsers} team members`]
+                  : plan.features
+                ).map((feat, idx) => (
                   <div key={idx} style={styles.featureItem}>
                     <CheckCircle2 size={15} color="#16a34a" style={{ flexShrink: 0, marginTop: '2px' }} />
                     <span>{feat}</span>

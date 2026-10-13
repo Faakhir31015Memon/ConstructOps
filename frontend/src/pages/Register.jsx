@@ -5,7 +5,7 @@ import { User, Lock, Mail, Building2, AlertCircle } from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
 
 const Register = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,7 +20,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const data = await register(name, email, password, companyName, 'en');
+      const data = await register(name, email, password, companyName, lang);
       if (data.success) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));

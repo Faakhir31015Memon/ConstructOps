@@ -4,7 +4,7 @@ import { getAlerts, markAlertRead } from '../services/api';
 import { useLang } from '../i18n/LanguageContext';
 
 const Navbar = ({ title, onToggleSidebar, subscription, onOpenPlans }) => {
-  const { t } = useLang();
+  const { t, lang, setLang, languages } = useLang();
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
 
@@ -175,6 +175,16 @@ const Navbar = ({ title, onToggleSidebar, subscription, onOpenPlans }) => {
 
 
         <div style={styles.profileSection}>
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value)}
+            aria-label="Interface language"
+            style={styles.langSelect}
+          >
+            {languages.map((l) => (
+              <option key={l.code} value={l.code}>{l.name}</option>
+            ))}
+          </select>
           <div style={styles.divider}></div>
           <div style={styles.details}>
             <span style={styles.name}>{user ? user.name : t('User')}</span>
@@ -223,6 +233,15 @@ const styles = {
   },
   notificationWrapper: {
     position: 'relative',
+  },
+  langSelect: {
+    padding: '0.35rem 0.5rem',
+    borderRadius: '8px',
+    border: '1px solid var(--border-color)',
+    backgroundColor: 'var(--bg-white)',
+    color: 'var(--dark-graphite)',
+    fontSize: '0.8rem',
+    cursor: 'pointer',
   },
   notificationIcon: {
     position: 'relative',

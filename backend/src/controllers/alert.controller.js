@@ -1,5 +1,6 @@
 import Alert from '../models/alert.model.js';
 import Project from '../models/project.model.js';
+import { toObjectId } from '../middleware/sanitize.middleware.js';
 
 // @desc    Get alerts list (scoped to project, company, or global admin)
 // @route   GET /api/v1/alerts
@@ -10,16 +11,20 @@ export const getAlerts = async (req, res) => {
   try {
     let query = {};
     if (projectId) {
+      const projectObjectId = toObjectId(projectId);
+      if (!projectObjectId) {
+        return res.status(400).json({ success: false, message: 'Invalid projectId' });
+      }
       // Verify project belongs to user's company
       const project = await Project.findOne({
-        _id: projectId,
+        _id: projectObjectId,
         ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
       });
       if (!project) {
         return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
       }
 
-      query.projectId = projectId;
+      query.projectId = projectObjectId;
     } else {
       // Global notification check
       if (req.user.role !== 'admin') {

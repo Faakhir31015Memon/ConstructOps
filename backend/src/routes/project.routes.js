@@ -9,6 +9,7 @@ import {
 } from '../controllers/project.controller.js';
 import { protect, authorize } from '../middleware/auth.middleware.js';
 import { checkProjectAccess } from '../middleware/projectAccess.middleware.js';
+import { limitProjects } from '../middleware/planLimit.middleware.js';
 
 const router = express.Router();
 
@@ -19,7 +20,7 @@ router.use('/:id', checkProjectAccess());
 
 router
   .route('/')
-  .post(authorize('owner', 'manager'), createProject)
+  .post(authorize('owner', 'manager'), limitProjects, createProject)
   .get(getProjects);
 
 router

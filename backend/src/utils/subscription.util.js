@@ -70,6 +70,20 @@ export const PLAN_PRICES = {
   '12_months': 135000,
 };
 
+/**
+ * Product limits per plan — single source of truth for entitlements.
+ * The frontend must render these values (via GET /subscription/plans),
+ * never its own hardcoded copy.
+ */
+export const PLAN_LIMITS = {
+  trial: { maxProjects: 2, maxUsers: 3 },
+  '1_month': { maxProjects: 5, maxUsers: 15 },
+  '6_months': { maxProjects: 8, maxUsers: 25 },
+  '12_months': { maxProjects: 15, maxUsers: 50 },
+};
+
+export const getPlanLimits = (plan) => PLAN_LIMITS[plan] || PLAN_LIMITS.trial;
+
 export const SUBSCRIPTION_PLANS = ['1_month', '6_months', '12_months'];
 
 export const PAYMENT_METHODS = ['card', 'easypaisa', 'jazzcash', 'bank_transfer'];

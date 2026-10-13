@@ -3,6 +3,8 @@ import MaterialLog from '../models/materialLog.model.js';
 import Alert from '../models/alert.model.js';
 import Project from '../models/project.model.js';
 import ProjectAssignment from '../models/projectAssignment.model.js';
+import { parsePagination, paginationMeta } from '../utils/pagination.js';
+import { toObjectId, escapeRegex } from '../middleware/sanitize.middleware.js';
 
 // @desc    Add material definition to project
 // @route   POST /api/v1/materials
@@ -15,9 +17,14 @@ export const addMaterial = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide projectId, name and unit' });
     }
 
+    const projectObjectId = toObjectId(projectId);
+    if (!projectObjectId) {
+      return res.status(400).json({ success: false, message: 'Invalid projectId' });
+    }
+
     // Verify project belongs to user's company
     const project = await Project.findOne({
-      _id: projectId,
+      _id: projectObjectId,
       ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
     });
     if (!project) {
@@ -25,14 +32,14 @@ export const addMaterial = async (req, res) => {
     }
 
     // Check if material already exists
-    let material = await Material.findOne({ projectId, name: { $regex: new RegExp(`^${name}$`, 'i') } });
+    let material = await Material.findOne({ projectId: projectObjectId, name: { $regex: `^${escapeRegex(String(name).trim())}$`, $options: 'i' } });
     if (material) {
       return res.status(400).json({ success: false, message: 'Material already exists in this project' });
     }
 
     material = await Material.create({
-      projectId,
-      name,
+      projectId: projectObjectId,
+      name: String(name).trim(),
       unit,
       totalIn: 0,
       totalUsed: 0,
@@ -52,13 +59,14 @@ export const getMaterials = async (req, res) => {
   const { projectId } = req.query;
 
   try {
-    if (!projectId) {
-      return res.status(400).json({ success: false, message: 'Please specify projectId parameter' });
+    const projectObjectId = toObjectId(projectId);
+    if (!projectObjectId) {
+      return res.status(400).json({ success: false, message: 'Please specify a valid projectId parameter' });
     }
 
     // Verify project belongs to user's company
     const project = await Project.findOne({
-      _id: projectId,
+      _id: projectObjectId,
       ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
     });
     if (!project) {
@@ -67,7 +75,7 @@ export const getMaterials = async (req, res) => {
 
     if (req.user.role === 'contractor') {
       const assignment = await ProjectAssignment.findOne({
-        projectId,
+        projectId: projectObjectId,
         contractorId: req.user._id,
         status: 'active',
       });
@@ -76,8 +84,12 @@ export const getMaterials = async (req, res) => {
       }
     }
 
-    const materials = await Material.find({ projectId });
-    res.json({ success: true, materials });
+    const { page, limit, skip } = parsePagination(req);
+    const [materials, total] = await Promise.all([
+      Material.find({ projectId: projectObjectId }).sort({ name: 1 }).skip(skip).limit(limit),
+      Material.countDocuments({ projectId: projectObjectId }),
+    ]);
+    res.json({ success: true, materials, pagination: paginationMeta(page, limit, total) });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }
@@ -94,9 +106,22 @@ export const logMaterialTransaction = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide all transaction details' });
     }
 
+    const projectObjectId = toObjectId(projectId);
+    const materialObjectId = toObjectId(materialId);
+    if (!projectObjectId || !materialObjectId) {
+      return res.status(400).json({ success: false, message: 'Invalid projectId or materialId' });
+    }
+    if (type !== 'IN' && type !== 'OUT') {
+      return res.status(400).json({ success: false, message: 'type must be IN or OUT' });
+    }
+    const quantityNum = Number(quantity);
+    if (!Number.isFinite(quantityNum) || quantityNum <= 0) {
+      return res.status(400).json({ success: false, message: 'quantity must be a positive number' });
+    }
+
     // Verify project belongs to user's company
     const project = await Project.findOne({
-      _id: projectId,
+      _id: projectObjectId,
       ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
     });
     if (!project) {
@@ -105,7 +130,7 @@ export const logMaterialTransaction = async (req, res) => {
 
     if (req.user.role === 'contractor') {
       const assignment = await ProjectAssignment.findOne({
-        projectId,
+        projectId: projectObjectId,
         contractorId: req.user._id,
         status: 'active',
       });
@@ -114,17 +139,17 @@ export const logMaterialTransaction = async (req, res) => {
       }
     }
 
-    const material = await Material.findOne({ _id: materialId, projectId });
+    const material = await Material.findOne({ _id: materialObjectId, projectId: projectObjectId });
     if (!material) {
       return res.status(404).json({ success: false, message: 'Material not found in this project' });
     }
 
     // Create Audit Log entry
     const log = await MaterialLog.create({
-      projectId,
-      materialId,
+      projectId: projectObjectId,
+      materialId: materialObjectId,
       type,
-      quantity,
+      quantity: quantityNum,
       note: note || '',
       createdBy: req.user._id,
     });
@@ -163,13 +188,14 @@ export const getMaterialLogs = async (req, res) => {
   const { projectId } = req.query;
 
   try {
-    if (!projectId) {
-      return res.status(400).json({ success: false, message: 'Please specify projectId parameter' });
+    const projectObjectId = toObjectId(projectId);
+    if (!projectObjectId) {
+      return res.status(400).json({ success: false, message: 'Please specify a valid projectId parameter' });
     }
 
     // Verify project belongs to user's company
     const project = await Project.findOne({
-      _id: projectId,
+      _id: projectObjectId,
       ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
     });
     if (!project) {
@@ -178,7 +204,7 @@ export const getMaterialLogs = async (req, res) => {
 
     if (req.user.role === 'contractor') {
       const assignment = await ProjectAssignment.findOne({
-        projectId,
+        projectId: projectObjectId,
         contractorId: req.user._id,
         status: 'active',
       });
@@ -187,12 +213,18 @@ export const getMaterialLogs = async (req, res) => {
       }
     }
 
-    const logs = await MaterialLog.find({ projectId })
-      .sort({ date: -1 })
-      .populate('materialId', 'name unit')
-      .populate('createdBy', 'name');
+    const { page, limit, skip } = parsePagination(req);
+    const [logs, total] = await Promise.all([
+      MaterialLog.find({ projectId: projectObjectId })
+        .sort({ date: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('materialId', 'name unit')
+        .populate('createdBy', 'name'),
+      MaterialLog.countDocuments({ projectId: projectObjectId }),
+    ]);
 
-    res.json({ success: true, logs });
+    res.json({ success: true, logs, pagination: paginationMeta(page, limit, total) });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }

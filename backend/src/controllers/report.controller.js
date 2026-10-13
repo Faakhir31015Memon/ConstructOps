@@ -2,6 +2,8 @@ import DailyReport from '../models/dailyReport.model.js';
 import Project from '../models/project.model.js';
 import Alert from '../models/alert.model.js';
 import ProjectAssignment from '../models/projectAssignment.model.js';
+import { parsePagination, paginationMeta } from '../utils/pagination.js';
+import { toObjectId } from '../middleware/sanitize.middleware.js';
 
 // @desc    Add daily report log (and run simulated AI evaluation)
 // @route   POST /api/v1/reports
@@ -14,8 +16,13 @@ export const createReport = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide projectId and description' });
     }
 
+    const projectObjectId = toObjectId(projectId);
+    if (!projectObjectId) {
+      return res.status(400).json({ success: false, message: 'Invalid projectId' });
+    }
+
     const project = await Project.findOne({
-      _id: projectId,
+      _id: projectObjectId,
       ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
     });
     if (!project) {
@@ -24,7 +31,7 @@ export const createReport = async (req, res) => {
 
     if (req.user.role === 'contractor') {
       const assignment = await ProjectAssignment.findOne({
-        projectId,
+        projectId: projectObjectId,
         contractorId: req.user._id,
         status: 'active',
       });
@@ -59,7 +66,7 @@ export const createReport = async (req, res) => {
       
       // Auto-trigger delay Alert
       await Alert.create({
-        projectId,
+        projectId: projectObjectId,
         type: 'delay',
         message: `AI Alert: Potential delay hazard flagged from daily log: "${description.substring(0, 60)}..."`,
         severity: 'medium',
@@ -84,12 +91,17 @@ export const createReport = async (req, res) => {
       }
     }
 
+    // Photo URLs only (from /api/v1/uploads) — reject oversized payloads and foreign data
+    const safeImages = (Array.isArray(images) ? images : [])
+      .filter((img) => typeof img === 'string' && (img.startsWith('/uploads/') || img.startsWith('https://')))
+      .slice(0, 10);
+
     const report = await DailyReport.create({
-      projectId,
+      projectId: projectObjectId,
       addedBy: req.user._id,
       description,
       workType: workType || 'Other',
-      images: images || [],
+      images: safeImages,
       aiAnalysis: {
         progressDetected,
         delayRisk,
@@ -111,13 +123,14 @@ export const getReports = async (req, res) => {
   const { projectId } = req.query;
 
   try {
-    if (!projectId) {
-      return res.status(400).json({ success: false, message: 'Please specify projectId parameter' });
+    const projectObjectId = toObjectId(projectId);
+    if (!projectObjectId) {
+      return res.status(400).json({ success: false, message: 'Please specify a valid projectId parameter' });
     }
 
     // Verify project belongs to user's company
     const project = await Project.findOne({
-      _id: projectId,
+      _id: projectObjectId,
       ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
     });
     if (!project) {
@@ -126,7 +139,7 @@ export const getReports = async (req, res) => {
 
     if (req.user.role === 'contractor') {
       const assignment = await ProjectAssignment.findOne({
-        projectId,
+        projectId: projectObjectId,
         contractorId: req.user._id,
         status: 'active',
       });
@@ -135,11 +148,17 @@ export const getReports = async (req, res) => {
       }
     }
 
-    const reports = await DailyReport.find({ projectId })
-      .sort({ date: -1 })
-      .populate('addedBy', 'name');
+    const { page, limit, skip } = parsePagination(req);
+    const [reports, total] = await Promise.all([
+      DailyReport.find({ projectId: projectObjectId })
+        .sort({ date: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('addedBy', 'name'),
+      DailyReport.countDocuments({ projectId: projectObjectId }),
+    ]);
 
-    res.json({ success: true, reports });
+    res.json({ success: true, reports, pagination: paginationMeta(page, limit, total) });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }

@@ -2,6 +2,8 @@ import Worker from '../models/worker.model.js';
 import Attendance from '../models/attendance.model.js';
 import Project from '../models/project.model.js';
 import { pick } from '../utils/pick.js';
+import { parsePagination, paginationMeta } from '../utils/pagination.js';
+import { toObjectId } from '../middleware/sanitize.middleware.js';
 
 // @desc    Add a worker to project
 // @route   POST /api/v1/workers
@@ -14,9 +16,14 @@ export const addWorker = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide all worker details' });
     }
 
+    const projectObjectId = toObjectId(projectId);
+    if (!projectObjectId) {
+      return res.status(400).json({ success: false, message: 'Invalid projectId' });
+    }
+
     // Verify project belongs to user's company
     const project = await Project.findOne({
-      _id: projectId,
+      _id: projectObjectId,
       ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
     });
     if (!project) {
@@ -24,7 +31,7 @@ export const addWorker = async (req, res) => {
     }
 
     const worker = await Worker.create({
-      projectId,
+      projectId: projectObjectId,
       name,
       role,
       dailyWage,
@@ -44,21 +51,26 @@ export const getWorkers = async (req, res) => {
   const { projectId } = req.query;
 
   try {
-    if (!projectId) {
-      return res.status(400).json({ success: false, message: 'Please specify projectId parameter' });
+    const projectObjectId = toObjectId(projectId);
+    if (!projectObjectId) {
+      return res.status(400).json({ success: false, message: 'Please specify a valid projectId parameter' });
     }
 
     // Verify project belongs to user's company
     const project = await Project.findOne({
-      _id: projectId,
+      _id: projectObjectId,
       ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
     });
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
     }
 
-    const workers = await Worker.find({ projectId });
-    res.json({ success: true, workers });
+    const { page, limit, skip } = parsePagination(req);
+    const [workers, total] = await Promise.all([
+      Worker.find({ projectId: projectObjectId }).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Worker.countDocuments({ projectId: projectObjectId }),
+    ]);
+    res.json({ success: true, workers, pagination: paginationMeta(page, limit, total) });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }
@@ -136,9 +148,15 @@ export const checkInAttendance = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide workerId, projectId, date, and status' });
     }
 
+    const projectObjectId = toObjectId(projectId);
+    const workerObjectId = toObjectId(workerId);
+    if (!projectObjectId || !workerObjectId) {
+      return res.status(400).json({ success: false, message: 'Invalid workerId or projectId' });
+    }
+
     // Verify project belongs to user's company
     const project = await Project.findOne({
-      _id: projectId,
+      _id: projectObjectId,
       ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
     });
     if (!project) {
@@ -150,15 +168,15 @@ export const checkInAttendance = async (req, res) => {
     attendanceDate.setUTCHours(0, 0, 0, 0);
 
     // Check if attendance already logged for this worker on this date
-    let attendance = await Attendance.findOne({ workerId, date: attendanceDate });
+    let attendance = await Attendance.findOne({ workerId: workerObjectId, date: attendanceDate });
 
     if (attendance) {
       attendance.status = status;
       await attendance.save();
     } else {
       attendance = await Attendance.create({
-        workerId,
-        projectId,
+        workerId: workerObjectId,
+        projectId: projectObjectId,
         date: attendanceDate,
         status,
       });
@@ -177,13 +195,14 @@ export const getAttendance = async (req, res) => {
   const { projectId, date } = req.query;
 
   try {
-    if (!projectId || !date) {
-      return res.status(400).json({ success: false, message: 'Please specify projectId and date parameters' });
+    const projectObjectId = toObjectId(projectId);
+    if (!projectObjectId || !date) {
+      return res.status(400).json({ success: false, message: 'Please specify a valid projectId and date parameters' });
     }
 
     // Verify project belongs to user's company
     const project = await Project.findOne({
-      _id: projectId,
+      _id: projectObjectId,
       ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
     });
     if (!project) {
@@ -194,7 +213,7 @@ export const getAttendance = async (req, res) => {
     attendanceDate.setUTCHours(0, 0, 0, 0);
 
     const attendanceRecords = await Attendance.find({
-      projectId,
+      projectId: projectObjectId,
       date: attendanceDate,
     }).populate('workerId', 'name role dailyWage');
 

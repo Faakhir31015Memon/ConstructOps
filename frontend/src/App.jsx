@@ -8,10 +8,27 @@ import ProjectDetail from './pages/ProjectDetail';
 import Dashboard from './pages/Dashboard';
 import Contractors from './pages/Contractors';
 
+const getStoredUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null');
+  } catch {
+    return null;
+  }
+};
+
+// Client-side gate only — the API re-checks every role. This prevents
+// contractor/accountant tokens from landing on admin-labeled screens.
+const RequireRole = ({ roles, children }) => {
+  const token = localStorage.getItem('token');
+  const user = getStoredUser();
+  if (!token) return <Navigate to="/login" replace />;
+  if (!roles.includes(user?.role)) return <Navigate to="/projects" replace />;
+  return children;
+};
+
 const HomeRedirect = () => {
   const token = localStorage.getItem('token');
-  const userString = localStorage.getItem('user');
-  const user = userString ? JSON.parse(userString) : null;
+  const user = getStoredUser();
 
   if (!token) {
     return <Navigate to="/login" replace />;
@@ -32,10 +49,10 @@ function App() {
 
         {/* Private workspace layouts */}
         <Route element={<Layout title="ConstructOps Dashboard" />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<RequireRole roles={['admin', 'owner', 'manager']}><Dashboard /></RequireRole>} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
-          <Route path="/contractors" element={<Contractors />} />
+          <Route path="/contractors" element={<RequireRole roles={['admin', 'owner', 'manager']}><Contractors /></RequireRole>} />
         </Route>
 
         {/* Fallback routes */}

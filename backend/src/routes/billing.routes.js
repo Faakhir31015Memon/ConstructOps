@@ -2,6 +2,7 @@ import express from 'express';
 import { PAK_BANKS } from '../config/pakBanks.js';
 import { getGatewayAvailability, verifyWebhookSignature } from '../services/paymentGateway.service.js';
 import { handleGatewayWebhook } from '../controllers/gatewayWebhook.controller.js';
+import { webhookLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.get('/gateway-status', (req, res) => {
 
 // Provider-to-server callback. Authenticity is proven by the HMAC signature
 // over the raw body — this route must stay unauthenticated by user tokens.
-router.post('/gateway/webhook/:provider', async (req, res) => {
+router.post('/gateway/webhook/:provider', webhookLimiter, async (req, res) => {
   try {
     const rawBody = req.rawBody ?? JSON.stringify(req.body || {});
     if (!verifyWebhookSignature(rawBody, req.get('X-ConstructOps-Signature'))) {

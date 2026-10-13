@@ -41,7 +41,7 @@ const renderRichText = (content) =>
   });
 
 const AssistantChat = () => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState(loadHistory);
   const [input, setInput] = useState('');
@@ -53,7 +53,7 @@ const AssistantChat = () => {
 
   useEffect(() => {
     if (!open || suggestions.length > 0) return;
-    getAssistantSuggestions('en')
+    getAssistantSuggestions(lang)
       .then((res) => setSuggestions(res.suggestions || []))
       .catch(() => {});
     inputRef.current?.focus();
@@ -72,7 +72,7 @@ const AssistantChat = () => {
     setInput('');
     setBusy(true);
     try {
-      const res = await sendAssistantMessage(next.slice(-12), 'en');
+      const res = await sendAssistantMessage(next.slice(-12), lang);
       const reply = {
         role: 'assistant',
         content: res.reply || 'Sorry, could not answer that.',

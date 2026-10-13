@@ -1,7 +1,9 @@
-const DEV_SECRET = 'constructops_super_secure_jwt_secret_key_2026_dev';
-
 const getSecret = () => {
-  return process.env.JWT_SECRET || DEV_SECRET;
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not set — refusing to sign or verify tokens.');
+  }
+  return secret;
 };
 
 export default getSecret;

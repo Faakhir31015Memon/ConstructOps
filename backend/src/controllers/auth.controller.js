@@ -1,9 +1,24 @@
 import getSecret from '../config/jwt.js';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import User from '../models/user.model.js';
 import Company from '../models/company.model.js';
 import { getCompanySubscriptionDetails } from '../utils/subscription.util.js';
 import { LANGUAGE_CODES, DEFAULT_LANGUAGE } from '../config/languages.js';
+
+const safeCompare = (a, b) => {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+};
+
+// Admin login is configured only via env vars; absent config disables it entirely.
+const verifyAdminCredentials = (normalizedEmail, password) => {
+  const adminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD || '';
+  if (!adminEmail || !adminPassword) return false;
+  return normalizedEmail === adminEmail && safeCompare(password, adminPassword);
+};
 
 // Helper to generate JWT token
 const generateToken = (id) => {
@@ -102,13 +117,11 @@ export const loginUser = async (req, res) => {
     }
 
     const normalizedEmail = (email || '').trim().toLowerCase();
-    const ADMIN_EMAIL = 'constops@admin.com';
-    const validAdminPasswords = ['constops@access.com', 'ConstOps@access.com'];
 
     // Direct Admin login support via regular login route
-    if (normalizedEmail === ADMIN_EMAIL && validAdminPasswords.includes(password)) {
+    if (verifyAdminCredentials(normalizedEmail, password)) {
       const token = jwt.sign(
-        { role: 'admin', email: ADMIN_EMAIL },
+        { role: 'admin', email: normalizedEmail },
         getSecret(),
         { expiresIn: '1d' }
       );
@@ -117,7 +130,7 @@ export const loginUser = async (req, res) => {
         success: true,
         token,
         user: {
-          email: ADMIN_EMAIL,
+          email: normalizedEmail,
           name: 'System Admin',
           role: 'admin',
         },
@@ -238,12 +251,10 @@ export const adminLogin = (req, res) => {
   const { email, password } = req.body;
 
   const normalizedEmail = (email || '').trim().toLowerCase();
-  const ADMIN_EMAIL = 'constops@admin.com';
-  const validPasswords = ['constops@access.com', 'ConstOps@access.com'];
 
-  if (normalizedEmail === ADMIN_EMAIL && validPasswords.includes(password)) {
+  if (verifyAdminCredentials(normalizedEmail, password)) {
     const token = jwt.sign(
-      { role: 'admin', email: ADMIN_EMAIL },
+      { role: 'admin', email: normalizedEmail },
       getSecret(),
       { expiresIn: '1d' }
     );
@@ -252,7 +263,7 @@ export const adminLogin = (req, res) => {
       success: true,
       token,
       user: {
-        email,
+        email: normalizedEmail,
         name: 'System Admin',
         role: 'admin',
       },

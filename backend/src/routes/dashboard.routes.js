@@ -69,14 +69,6 @@ router.get('/', protect, async (req, res) => {
       return { name: m, planned, actual };
     }).filter(data => data.planned > 0 || data.actual > 0);
 
-    if (budgetData.length === 0) {
-      budgetData.push(
-        { name: 'Jan', planned: 10000, actual: 8000 },
-        { name: 'Feb', planned: 15000, actual: 12000 },
-        { name: 'Mar', planned: 20000, actual: 18000 }
-      );
-    }
-
     // Chart 3: Worker Attendance
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);

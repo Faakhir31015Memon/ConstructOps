@@ -1,6 +1,7 @@
 import { sameId } from '../utils/ids.js';
 import Project from '../models/project.model.js';
 import ProjectAssignment from '../models/projectAssignment.model.js';
+import { toObjectId } from './sanitize.middleware.js';
 
 /**
  * Middleware: checkProjectAccess
@@ -22,9 +23,9 @@ export const checkProjectAccess = (options = { requireOwner: false }) => {
 
       // Super Admin bypass: Always full access
       if (user.role === 'admin') {
-        const projectId = req.params.projectId || req.params.id || req.body.projectId || req.query.projectId;
-        if (projectId) {
-          const project = await Project.findById(projectId);
+        const projectObjectId = toObjectId(req.params.projectId || req.params.id || req.body?.projectId || req.query.projectId);
+        if (projectObjectId) {
+          const project = await Project.findById(projectObjectId);
           if (project) {
             req.project = project;
           }
@@ -32,14 +33,15 @@ export const checkProjectAccess = (options = { requireOwner: false }) => {
         return next();
       }
 
-      const projectId = req.params.projectId || req.params.id || req.body.projectId || req.query.projectId;
+      const rawProjectId = req.params.projectId || req.params.id || req.body?.projectId || req.query.projectId;
+      const projectObjectId = toObjectId(rawProjectId);
 
-      if (!projectId) {
-        return res.status(400).json({ success: false, message: 'Project ID is required' });
+      if (!projectObjectId) {
+        return res.status(400).json({ success: false, message: 'A valid Project ID is required' });
       }
 
       // Fetch the requested project
-      const project = await Project.findById(projectId);
+      const project = await Project.findById(projectObjectId);
       if (!project) {
         return res.status(404).json({ success: false, message: 'Project not found' });
       }
