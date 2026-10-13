@@ -75,6 +75,28 @@ export const getMyPayments = async () => {
   return data;
 };
 
+// --- BILLING / BANKS / GATEWAY API METHODS ---
+export const getPakBanks = async () => {
+  const { data } = await API.get('/billing/banks');
+  return data;
+};
+
+export const getGatewayStatus = async () => {
+  const { data } = await API.get('/billing/gateway-status');
+  return data;
+};
+
+// --- AI ASSISTANT API METHODS ---
+export const sendAssistantMessage = async (messages) => {
+  const { data } = await API.post('/assistant/chat', { messages });
+  return data;
+};
+
+export const getAssistantSuggestions = async () => {
+  const { data } = await API.get('/assistant/suggestions');
+  return data;
+};
+
 // --- ADMIN SUBSCRIPTION PAYMENT VERIFICATION ---
 export const getAllSubscriptionPayments = async (status = '') => {
   const url = status ? `/subscription/admin/payments?status=${status}` : '/subscription/admin/payments';

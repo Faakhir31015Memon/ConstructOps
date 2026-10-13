@@ -1,7 +1,9 @@
+import { sameId } from '../utils/ids.js';
 import Expense from '../models/expense.model.js';
 import Project from '../models/project.model.js';
 import Alert from '../models/alert.model.js';
 import ProjectAssignment from '../models/projectAssignment.model.js';
+import { pick } from '../utils/pick.js';
 
 // Helper: Recalculate and synchronize project spent based ONLY on approved expenses
 const syncProjectSpent = async (projectId) => {
@@ -59,7 +61,7 @@ export const addExpense = async (req, res) => {
     }
 
     // Company isolation check
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId?.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Access denied: Project belongs to another company' });
     }
 
@@ -136,7 +138,7 @@ export const getExpenses = async (req, res) => {
     }
 
     // Company isolation check
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId?.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Access denied: Project belongs to another company' });
     }
 
@@ -189,7 +191,7 @@ export const reviewExpense = async (req, res) => {
     }
 
     const project = await Project.findById(expense.projectId);
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId?.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Access denied: Expense belongs to another company' });
     }
 
@@ -230,7 +232,7 @@ export const updateExpense = async (req, res) => {
     }
 
     const project = await Project.findById(expense.projectId);
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId?.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Unauthorized access to this project expense' });
     }
 
@@ -247,7 +249,8 @@ export const updateExpense = async (req, res) => {
       delete req.body.reviewedBy;
     }
 
-    const updated = await Expense.findByIdAndUpdate(req.params.id, req.body, {
+    const editable = pick(req.body, ['category', 'amount', 'description', 'date', 'receiptUrl']);
+    const updated = await Expense.findByIdAndUpdate(req.params.id, editable, {
       new: true,
       runValidators: true,
     });
@@ -271,7 +274,7 @@ export const deleteExpense = async (req, res) => {
     }
 
     const project = await Project.findById(expense.projectId);
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId?.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Unauthorized access to this project expense' });
     }
 

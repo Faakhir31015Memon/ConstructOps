@@ -17,14 +17,39 @@ import userRoutes from './routes/user.routes.js';
 import contractorRoutes from './routes/contractor.routes.js';
 import exportRoutes from './routes/export.routes.js';
 import subscriptionRoutes from './routes/subscription.routes.js';
+import billingRoutes from './routes/billing.routes.js';
+import assistantRoutes from './routes/assistant.routes.js';
 
 dotenv.config();
 
 const app = express();
 
 // Middlewares
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+// CORS is limited to origins listed in CORS_ORIGIN (comma separated).
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow non-browser clients (curl, server-to-server) with no Origin header.
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error('CORS blocked for this origin'));
+    },
+  }),
+);
+
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  next();
+});
+
+// Keep the exact raw body for webhook signature verification (payment gateway HMAC).
+app.use(express.json({ limit: '10mb', verify: (req, res, buf) => { req.rawBody = buf.toString('utf8'); } }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 if (process.env.NODE_ENV !== 'production') {
@@ -64,6 +89,8 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/contractors', contractorRoutes);
 app.use('/api/v1/export', exportRoutes);
 app.use('/api/v1/subscription', subscriptionRoutes);
+app.use('/api/v1/billing', billingRoutes);
+app.use('/api/v1/assistant', assistantRoutes);
 
 // Error Handling Middleware
 app.use((req, res, next) => {
@@ -74,6 +101,9 @@ app.use((req, res, next) => {
 
 app.use((err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  if (err.message === 'CORS blocked for this origin') {
+    return res.status(403).json({ success: false, message: 'This origin is not allowed to access the API' });
+  }
   res.status(statusCode).json({
     success: false,
     message: err.message,

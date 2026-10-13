@@ -41,6 +41,20 @@ const subscriptionPaymentSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    bankInfo: {
+      bankName: { type: String, trim: true, default: null },
+      bankCode: { type: String, trim: true, default: null },
+      accountTitle: { type: String, trim: true, default: null },
+      accountNumber: { type: String, trim: true, default: null },
+      iban: { type: String, trim: true, uppercase: true, default: null },
+    },
+    gateway: {
+      provider: { type: String, default: null },
+      orderId: { type: String, default: null, index: true },
+      checkoutUrl: { type: String, default: null },
+      sessionExpiry: { type: Date, default: null },
+      capturedAt: { type: Date, default: null },
+    },
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],

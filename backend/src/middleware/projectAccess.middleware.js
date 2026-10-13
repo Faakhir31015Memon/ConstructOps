@@ -1,3 +1,4 @@
+import { sameId } from '../utils/ids.js';
 import Project from '../models/project.model.js';
 import ProjectAssignment from '../models/projectAssignment.model.js';
 
@@ -44,7 +45,7 @@ export const checkProjectAccess = (options = { requireOwner: false }) => {
       }
 
       // Strict Company check: user's company must match project's company
-      if (!user.companyId || project.companyId.toString() !== user.companyId.toString()) {
+      if (!user.companyId || !sameId(project.companyId, user.companyId)) {
         return res.status(403).json({
           success: false,
           message: 'Access denied: Project does not belong to your company',

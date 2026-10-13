@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import SubscriptionBanner from './SubscriptionBanner';
 import SubscriptionModal from './SubscriptionModal';
+import AssistantChat from './AssistantChat';
 import { getSubscriptionStatus } from '../services/api';
 
 const Layout = ({ title }) => {
@@ -50,6 +51,10 @@ const Layout = ({ title }) => {
 
   const isExpired = subscription?.isExpired;
   const isPaymentPending = Boolean(subscription?.pendingPayment);
+  let isAdmin = false;
+  try {
+    isAdmin = JSON.parse(localStorage.getItem('user') || 'null')?.role === 'admin';
+  } catch { /* malformed user cache — treat as non-admin */ }
 
   return (
     <div className="app-layout">
@@ -144,6 +149,9 @@ const Layout = ({ title }) => {
         onPaymentSubmitted={handlePaymentSubmitted}
         isExpiredLock={Boolean(isExpired)}
       />
+
+      {/* Floating AI assistant for company users (not system admin) */}
+      {!isAdmin && <AssistantChat />}
     </div>
   );
 };

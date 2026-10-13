@@ -1,3 +1,5 @@
+import { getGatewayAvailability } from '../services/paymentGateway.service.js';
+
 /**
  * Calculates current subscription status for a company
  * @param {Object} company - Company mongoose document or plain object
@@ -78,6 +80,7 @@ export const PAYMENT_METHODS = ['card', 'easypaisa', 'jazzcash', 'bank_transfer'
  */
 export const getGatewayConfig = () => ({
   currency: 'PKR',
+  gateways: getGatewayAvailability(),
   methods: [
     {
       id: 'card',

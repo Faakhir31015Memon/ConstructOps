@@ -1,3 +1,4 @@
+import { sameId } from '../utils/ids.js';
 import User from '../models/user.model.js';
 import Project from '../models/project.model.js';
 import ProjectAssignment from '../models/projectAssignment.model.js';
@@ -99,7 +100,7 @@ export const assignContractorToProject = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId?.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Project belongs to another company' });
     }
 
@@ -154,7 +155,7 @@ export const revokeContractorAssignment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Assignment record not found' });
     }
 
-    if (req.user.role !== 'admin' && assignment.companyId.toString() !== req.user.companyId?.toString()) {
+    if (req.user.role !== 'admin' && !sameId(assignment.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Assignment belongs to another company' });
     }
 
@@ -187,7 +188,7 @@ export const saveContract = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId?.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Project belongs to another company' });
     }
 
@@ -227,7 +228,7 @@ export const getContractByProject = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId?.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Project belongs to another company' });
     }
 
@@ -261,7 +262,7 @@ export const recordPayment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId?.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Project belongs to another company' });
     }
 
@@ -297,7 +298,7 @@ export const getPaymentsByProject = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId?.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Project belongs to another company' });
     }
 

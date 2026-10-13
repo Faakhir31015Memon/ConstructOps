@@ -1,3 +1,4 @@
+import { sameId } from '../utils/ids.js';
 import Project from '../models/project.model.js';
 import Expense from '../models/expense.model.js';
 import Worker from '../models/worker.model.js';
@@ -6,6 +7,7 @@ import DailyReport from '../models/dailyReport.model.js';
 import ProjectAssignment from '../models/projectAssignment.model.js';
 import Contract from '../models/contract.model.js';
 import Payment from '../models/payment.model.js';
+import { pick } from '../utils/pick.js';
 
 // @desc    Create a new project
 // @route   POST /api/v1/projects
@@ -88,7 +90,7 @@ export const getProjectById = async (req, res) => {
     }
 
     // Company isolation check
-    if (project.companyId.toString() !== req.user.companyId?.toString()) {
+    if (!sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Access denied: Project belongs to another company' });
     }
 
@@ -121,7 +123,7 @@ export const updateProject = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Access denied: Project belongs to another company' });
     }
 
@@ -130,7 +132,8 @@ export const updateProject = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied: Contractors cannot modify project configuration' });
     }
 
-    const updated = await Project.findByIdAndUpdate(req.params.id, req.body, {
+    const editable = pick(req.body, ['name', 'location', 'budget', 'startDate', 'endDate', 'status', 'progress']);
+    const updated = await Project.findByIdAndUpdate(req.params.id, editable, {
       new: true,
       runValidators: true,
     });
@@ -152,7 +155,7 @@ export const deleteProject = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Access denied: Project belongs to another company' });
     }
 
@@ -179,7 +182,7 @@ export const getProjectDashboard = async (req, res) => {
     }
 
     // Company isolation check
-    if (req.user.role !== 'admin' && project.companyId.toString() !== req.user.companyId.toString()) {
+    if (req.user.role !== 'admin' && !sameId(project.companyId, req.user.companyId)) {
       return res.status(403).json({ success: false, message: 'Access denied: Project belongs to another company' });
     }
 

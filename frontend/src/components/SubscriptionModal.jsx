@@ -13,7 +13,7 @@ import {
   ArrowLeft,
   Hourglass
 } from 'lucide-react';
-import { submitSubscriptionPayment, getSubscriptionPlans } from '../services/api';
+import { submitSubscriptionPayment, getSubscriptionPlans, getPakBanks } from '../services/api';
 
 const PLANS = [
   {
@@ -90,6 +90,12 @@ const SubscriptionModal = ({
   const [transactionId, setTransactionId] = useState('');
   const [cardHolderName, setCardHolderName] = useState('');
   const [cardNumber, setCardNumber] = useState('');
+  const [banks, setBanks] = useState([]);
+  const [bankName, setBankName] = useState('');
+  const [accountTitle, setAccountTitle] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [iban, setIban] = useState('');
+  const [payerMobile, setPayerMobile] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -99,6 +105,9 @@ const SubscriptionModal = ({
       getSubscriptionPlans()
         .then((res) => { if (res.success) setGateway(res.gateway); })
         .catch(() => { /* gateway info is optional */ });
+      getPakBanks()
+        .then((res) => { if (res.success) setBanks(res.banks || []); })
+        .catch(() => {});
     }
   }, [isOpen]);
 
@@ -114,7 +123,7 @@ const SubscriptionModal = ({
 
   const currentPlan = PLANS.find((p) => p.id === selectedPlan);
 
-  const handleSubmitPayment = async () => {
+  const handleSubmitPayment = async (payVia = 'manual') => {
     setLoading(true);
     setError('');
 
@@ -126,13 +135,26 @@ const SubscriptionModal = ({
       if (selectedMethod === 'card') {
         payload.cardHolderName = cardHolderName;
         payload.cardNumber = cardNumber;
+      } else if (selectedMethod === 'bank_transfer') {
+        payload.transactionReference = transactionId;
+        payload.bankInfo = { bankName, accountTitle, accountNumber, iban };
       } else {
         payload.transactionReference = transactionId;
       }
 
+      if (payVia === 'gateway') {
+        payload.payVia = 'gateway';
+        payload.payerMobile = payerMobile;
+      }
+
       const res = await submitSubscriptionPayment(payload);
       if (res.success) {
-        setSuccessMsg(res.message || 'Payment submitted for verification!');
+        if (res.mode === 'gateway' && res.checkoutUrl) {
+          window.open(res.checkoutUrl, '_blank', 'noopener');
+          setSuccessMsg(`Checkout window opened for ${selectedMethod === 'jazzcash' ? 'JazzCash' : 'Easypaisa'} payment. Complete the payment there, then log in again — access unlocks automatically once the payment is captured.`);
+        } else {
+          setSuccessMsg(res.message || 'Payment submitted for verification!');
+        }
         setStep('pending');
         if (onPaymentSubmitted) onPaymentSubmitted();
       } else {
@@ -378,17 +400,77 @@ const SubscriptionModal = ({
             />
           </div>
         </div>
+      ) : selectedMethod === 'bank_transfer' ? (
+        <div style={styles.formGrid}>
+          <div className="form-group">
+            <label>Bank (Pakistan)</label>
+            <select className="form-control" value={bankName} onChange={(e) => setBankName(e.target.value)}>
+              <option value="">Select bank...</option>
+              {banks.map((b) => (
+                <option key={b.code} value={b.name}>{b.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Account Title</label>
+            <input
+              className="form-control"
+              placeholder="Account holder name as printed on cheque"
+              value={accountTitle}
+              onChange={(e) => setAccountTitle(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>Account Number <span style={{ color: '#94a3b8', fontWeight: '400' }}>(or IBAN — koi ek zaroori hai)</span></label>
+            <input
+              className="form-control"
+              placeholder="e.g. 1234567890"
+              inputMode="numeric"
+              value={accountNumber}
+              onChange={(e) => setAccountNumber(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>IBAN <span style={{ color: '#94a3b8', fontWeight: '400' }}>(optional)</span></label>
+            <input
+              className="form-control"
+              placeholder="e.g. PK36SCBL0000001123456702"
+              maxLength={34}
+              value={iban}
+              onChange={(e) => setIban(e.target.value.toUpperCase())}
+            />
+          </div>
+          <div className="form-group">
+            <label>Transaction / UTR Reference Number</label>
+            <input
+              className="form-control"
+              placeholder="e.g. UTR-123456789"
+              value={transactionId}
+              onChange={(e) => setTransactionId(e.target.value)}
+            />
+          </div>
+        </div>
       ) : (
         <div className="form-group">
-          <label>
-            {selectedMethod === 'bank_transfer' ? 'Transaction / UTR Reference Number' : 'Transaction ID (TID)'}
-          </label>
+          <label>Transaction ID (TID)</label>
           <input
             className="form-control"
-            placeholder={selectedMethod === 'bank_transfer' ? 'e.g. UTR-123456789' : 'e.g. TID-1234567890'}
+            placeholder="e.g. TID-1234567890"
             value={transactionId}
             onChange={(e) => setTransactionId(e.target.value)}
           />
+          {gateway?.gateways?.[selectedMethod]?.live && (
+            <div style={{ marginTop: '14px' }}>
+              <label>Apna Mobile Number (wallet checkout ke liye)</label>
+              <input
+                className="form-control"
+                placeholder="03XX-XXXXXXX"
+                value={payerMobile}
+                onChange={(e) => setPayerMobile(e.target.value)}
+                style={{ marginTop: '6px' }}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -397,7 +479,11 @@ const SubscriptionModal = ({
       <div style={styles.footer}>
         <div style={styles.footerNote}>
           <ShieldCheck size={18} color="#16a34a" />
-          <span>Payment is verified by admin. Login is blocked until approval.</span>
+          <span>
+            {gateway?.gateways?.[selectedMethod]?.live
+              ? 'Pay online now, ya manual TID bhej kar admin verification karayein.'
+              : 'Payment is verified by admin. Login is blocked until approval.'}
+          </span>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           {!isExpiredLock && onClose && (
@@ -405,7 +491,17 @@ const SubscriptionModal = ({
               Cancel
             </button>
           )}
-          <button type="button" onClick={handleSubmitPayment} disabled={loading} style={styles.activateBtn}>
+          {['easypaisa', 'jazzcash'].includes(selectedMethod) && gateway?.gateways?.[selectedMethod]?.live && (
+            <button
+              type="button"
+              onClick={() => handleSubmitPayment('gateway')}
+              disabled={loading}
+              style={{ ...styles.activateBtn, backgroundColor: '#16a34a' }}
+            >
+              <span>Pay Live via {selectedMethod === 'jazzcash' ? 'JazzCash' : 'Easypaisa'}</span>
+            </button>
+          )}
+          <button type="button" onClick={() => handleSubmitPayment('manual')} disabled={loading} style={styles.activateBtn}>
             {loading ? 'Submitting Payment...' : (
               <>
                 <ZapIcon />

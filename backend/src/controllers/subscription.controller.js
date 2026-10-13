@@ -9,6 +9,9 @@ import {
   PAYMENT_METHODS,
   getGatewayConfig,
 } from '../utils/subscription.util.js';
+import { validateBankInfo } from '../config/pakBanks.js';
+import { getGatewayAvailability, initiateCheckout } from '../services/paymentGateway.service.js';
+import { activatePlanForPayment } from '../services/subscriptionActivation.service.js';
 
 // @desc    Get plan prices (PKR) and payment gateway instructions
 // @route   GET /api/v1/subscription/plans
@@ -43,6 +46,15 @@ export const submitSubscriptionPayment = async (req, res) => {
 
     let reference = (transactionReference || '').trim();
     let details = (payerDetails || '').trim();
+    let validatedBankInfo = null;
+
+    if (method === 'bank_transfer') {
+      const check = validateBankInfo(req.body.bankInfo || {});
+      if (!check.ok) {
+        return res.status(400).json({ success: false, message: check.error });
+      }
+      validatedBankInfo = check.value;
+    }
 
     if (method === 'card') {
       if (!(cardHolderName || '').trim()) {
@@ -87,11 +99,55 @@ export const submitSubscriptionPayment = async (req, res) => {
       method,
       transactionReference: reference,
       payerDetails: details,
+      bankInfo: validatedBankInfo || undefined,
       status: 'pending',
     });
 
     // Lock the whole company out until the admin approves the payment
     await User.updateMany({ companyId }, { status: 'pending_payment' });
+
+    const wantsGateway =
+      req.body.payVia === 'gateway' &&
+      ['jazzcash', 'easypaisa'].includes(method) &&
+      getGatewayAvailability()[method]?.live;
+
+    if (wantsGateway) {
+      try {
+        const companyDoc = await Company.findById(companyId);
+        const session = await initiateCheckout({
+          provider: method,
+          paymentId: payment._id.toString(),
+          amountPKR: payment.amount,
+          payerMobile: req.body.payerMobile,
+          company: companyDoc?.name || 'company',
+        });
+        payment.gateway = {
+          provider: session.provider,
+          orderId: session.orderId,
+          checkoutUrl: session.checkoutUrl,
+          sessionExpiry: session.sessionExpiry,
+        };
+        payment.transactionReference = session.orderId;
+        await payment.save();
+
+        return res.status(201).json({
+          success: true,
+          mode: 'gateway',
+          message: `${method === 'jazzcash' ? 'JazzCash' : 'Easypaisa'} checkout created. Complete the payment to activate your plan.`,
+          paymentId: payment._id,
+          checkoutUrl: session.checkoutUrl,
+          orderId: session.orderId,
+        });
+      } catch (error) {
+        await SubscriptionPayment.deleteOne({ _id: payment._id });
+        await User.updateMany({ companyId: payment.companyId, status: 'active' });
+        console.error('Gateway checkout error:', error);
+        return res.status(502).json({
+          success: false,
+          message: `${error.code === 'GATEWAY_NOT_CONFIGURED' ? 'Gateway not configured' : 'Could not start the gateway session'}. Please pay by manual ${method} transfer and submit the transaction reference instead.`,
+        });
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -154,38 +210,15 @@ export const approveSubscriptionPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: `Payment already ${payment.status}` });
     }
 
-    const company = await Company.findById(payment.companyId);
-    if (!company) {
-      return res.status(404).json({ success: false, message: 'Company not found' });
-    }
-
-    const duration = PLAN_DURATIONS[payment.plan];
-    const now = new Date();
-    let newEndDate;
-    if (company.subscriptionEndDate && new Date(company.subscriptionEndDate) > now && company.subscriptionStatus === 'active') {
-      newEndDate = new Date(new Date(company.subscriptionEndDate).getTime() + duration);
-    } else {
-      newEndDate = new Date(now.getTime() + duration);
-    }
-
-    company.subscriptionPlan = payment.plan;
-    company.subscriptionStatus = 'active';
-    company.isTrial = false;
-    company.subscriptionStartDate = now;
-    company.subscriptionEndDate = newEndDate;
-    await company.save();
-
-    payment.status = 'approved';
-    payment.reviewNote = (req.body.reviewNote || '').trim();
-    payment.reviewedAt = new Date();
-    await payment.save();
-
-    await User.updateMany({ companyId: company._id }, { status: 'active' });
+    const { company, subscription } = await activatePlanForPayment(
+      payment,
+      (req.body.reviewNote || '').trim(),
+    );
 
     res.json({
       success: true,
       message: `Payment approved. ${payment.plan.replace('_', ' ')} plan activated for ${company.name}. Users can now log in.`,
-      subscription: getCompanySubscriptionDetails(company),
+      subscription,
     });
   } catch (error) {
     console.error('Payment approval error:', error);

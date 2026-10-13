@@ -1,6 +1,7 @@
 import Worker from '../models/worker.model.js';
 import Attendance from '../models/attendance.model.js';
 import Project from '../models/project.model.js';
+import { pick } from '../utils/pick.js';
 
 // @desc    Add a worker to project
 // @route   POST /api/v1/workers
@@ -82,7 +83,8 @@ export const updateWorker = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Unauthorized access to this worker' });
     }
 
-    const updatedWorker = await Worker.findByIdAndUpdate(req.params.id, req.body, {
+    const editable = pick(req.body, ['name', 'role', 'dailyWage', 'phone']);
+    const updatedWorker = await Worker.findByIdAndUpdate(req.params.id, editable, {
       new: true,
       runValidators: true,
     });

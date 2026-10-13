@@ -8,10 +8,14 @@ import {
   getProjectDashboard,
 } from '../controllers/project.controller.js';
 import { protect, authorize } from '../middleware/auth.middleware.js';
+import { checkProjectAccess } from '../middleware/projectAccess.middleware.js';
 
 const router = express.Router();
 
 router.use(protect);
+
+// Gate every /:id... request (incl. /:id/dashboard) on company + assignment checks
+router.use('/:id', checkProjectAccess());
 
 router
   .route('/')
