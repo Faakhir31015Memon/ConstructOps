@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Bell, Briefcase, Check, Menu, Clock, AlertCircle, Zap } from 'lucide-react';
 import { getAlerts, markAlertRead } from '../services/api';
 import { useLang } from '../i18n/LanguageContext';
-import LanguageSelect from './LanguageSelect';
 
 const Navbar = ({ title, onToggleSidebar, subscription, onOpenPlans }) => {
   const { t } = useLang();
@@ -174,9 +173,6 @@ const Navbar = ({ title, onToggleSidebar, subscription, onOpenPlans }) => {
           )}
         </div>
 
-        <div className="navbar-language">
-          <LanguageSelect tone="light" />
-        </div>
 
         <div style={styles.profileSection}>
           <div style={styles.divider}></div>
