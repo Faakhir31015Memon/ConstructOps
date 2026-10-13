@@ -25,7 +25,10 @@ dotenv.config();
 const app = express();
 
 // Middlewares
-// CORS is limited to origins listed in CORS_ORIGIN (comma separated).
+// CORS allowlist: origins from CORS_ORIGIN (comma separated). In development any
+// local origin (localhost / 127.0.0.1 on any port) is accepted so the dev server
+// works even when Vite picks another port.
+const isDev = process.env.NODE_ENV !== 'production';
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
   .split(',')
   .map((o) => o.trim())
@@ -35,7 +38,9 @@ app.use(
   cors({
     origin(origin, callback) {
       // Allow non-browser clients (curl, server-to-server) with no Origin header.
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (isDev && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return callback(null, true);
       callback(new Error('CORS blocked for this origin'));
     },
   }),
@@ -104,10 +109,11 @@ app.use((err, req, res, next) => {
   if (err.message === 'CORS blocked for this origin') {
     return res.status(403).json({ success: false, message: 'This origin is not allowed to access the API' });
   }
+  // Full error stays in the server log; the browser never receives stack traces.
+  console.error(`${req.method} ${req.originalUrl} ->`, err);
   res.status(statusCode).json({
     success: false,
-    message: err.message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    message: err.message || 'Server error',
   });
 });
 
