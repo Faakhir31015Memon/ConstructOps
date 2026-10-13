@@ -19,7 +19,7 @@ router.get('/', protect, verifyAdmin, async (req, res) => {
   }
 });
 
-// PUT ban/unban user account (Admin only)
+// PUT ban/deactivate user + delete ALL their company data (Admin only)
 router.put('/:id/status', protect, verifyAdmin, async (req, res) => {
   const { status } = req.body;
 
@@ -34,16 +34,35 @@ router.put('/:id/status', protect, verifyAdmin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    // When banning: cascade delete all projects, budgets, workers, expenses, etc.
+    if (status === 'banned' && user.companyId) {
+      // Delete all company data (projects, workers, expenses, materials, alerts, reports, etc.)
+      // but keep the user record itself (just marked as banned)
+      await deleteCompanyData(user.companyId, {
+        deleteCompany: true,   // remove company record
+        deleteUsers: false,    // keep the user so admin can see them in the list
+      });
+
+      // Clear companyId since company was deleted
+      user.companyId = undefined;
+    }
+
     user.status = status;
     await user.save();
 
-    res.json({ success: true, message: `User status updated to ${status}`, user });
+    res.json({
+      success: true,
+      message: status === 'banned'
+        ? 'User banned and all associated company data deleted successfully'
+        : 'User reactivated successfully',
+      user,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }
 });
 
-// DELETE user + all their company data (Admin only)
+// DELETE user + all their company data completely (Admin only)
 router.delete('/:id', protect, verifyAdmin, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -55,14 +74,10 @@ router.delete('/:id', protect, verifyAdmin, async (req, res) => {
     const companyId = user.companyId;
 
     if (companyId) {
-      // If this user owns a company (role: owner / admin), wipe all company data
-      if (['owner', 'admin'].includes(user.role)) {
-        await deleteCompanyData(companyId, { deleteCompany: true, deleteUsers: true });
-      } else {
-        // Regular member — just delete the user; keep company intact
-        await user.deleteOne();
-      }
+      // Wipe everything: company, all projects, all related data, all users of the company
+      await deleteCompanyData(companyId, { deleteCompany: true, deleteUsers: true });
     } else {
+      // No company — just delete the user
       await user.deleteOne();
     }
 
@@ -72,7 +87,7 @@ router.delete('/:id', protect, verifyAdmin, async (req, res) => {
   }
 });
 
-// DELETE clear all data for a company (Admin only) — keeps users, wipes projects & data
+// DELETE clear all data for a company (Admin only) — keeps users, wipes projects & data only
 router.delete('/:id/clear-data', protect, verifyAdmin, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).populate('companyId');
@@ -88,7 +103,7 @@ router.delete('/:id/clear-data', protect, verifyAdmin, async (req, res) => {
     // Wipe all project data but keep company + users intact
     await deleteCompanyData(user.companyId._id, { deleteCompany: false, deleteUsers: false });
 
-    res.json({ success: true, message: 'All company data cleared successfully. Users and company record preserved.' });
+    res.json({ success: true, message: 'All company data cleared. Users and company record preserved.' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }

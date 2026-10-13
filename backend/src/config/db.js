@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 let connection;
 
 const resolveUri = () => {
-  return process.env.DB_URI || 'mongodb://localhost:27017/constructops';
+  return process.env.DB_URI || 'mongodb://127.0.0.1:27017/constructops_dev';
 };
 
 const connectDB = async () => {
