@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, CheckCircle2, Lock } from 'lucide-react';
 import { resetPassword } from '../services/api';
+import PasswordInput, { passwordMeetsPolicy } from '../components/PasswordInput';
 import { useLang } from '../i18n/LanguageContext';
 
 const ResetPassword = () => {
@@ -19,6 +20,10 @@ const ResetPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (!passwordMeetsPolicy(password)) {
+      setError(t('Password does not meet the requirements below yet'));
+      return;
+    }
     if (password !== confirm) {
       setError(t('Both passwords must match'));
       return;
@@ -53,46 +58,33 @@ const ResetPassword = () => {
                 <span>{error}</span>
               </div>
             )}
-            {!error && (
-              <>
-                <div className="form-group">
-                  <label>{t('New Password')}</label>
-                  <div style={styles.inputWrapper}>
-                    <Lock size={18} style={styles.inputIcon} />
-                    <input
-                      type="password"
-                      className="form-control"
-                      style={styles.input}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={8}
-                    />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>{t('Confirm new password')}</label>
-                  <div style={styles.inputWrapper}>
-                    <Lock size={18} style={styles.inputIcon} />
-                    <input
-                      type="password"
-                      className="form-control"
-                      style={styles.input}
-                      value={confirm}
-                      onChange={(e) => setConfirm(e.target.value)}
-                      required
-                      minLength={8}
-                    />
-                  </div>
-                </div>
-                <p style={styles.hint}>
-                  {t('Use at least 8 characters with letters and numbers. All other devices will be signed out.')}
-                </p>
-                <button type="submit" className="btn btn-primary w-full" style={styles.submitBtn} disabled={loading}>
-                  {loading ? t('Saving...') : t('Update password')}
-                </button>
-              </>
-            )}
+            <div className="form-group">
+              <label>{t('New Password')}</label>
+              <PasswordInput
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                required
+                icon={Lock}
+                showRules
+              />
+            </div>
+            <div className="form-group">
+              <label>{t('Confirm new password')}</label>
+              <PasswordInput
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                autoComplete="new-password"
+                required
+                icon={Lock}
+              />
+            </div>
+            <p style={styles.hint}>
+              {t('All other devices will be signed out after the change.')}
+            </p>
+            <button type="submit" className="btn btn-primary w-full" style={styles.submitBtn} disabled={loading}>
+              {loading ? t('Saving...') : t('Update password')}
+            </button>
           </form>
         )}
 

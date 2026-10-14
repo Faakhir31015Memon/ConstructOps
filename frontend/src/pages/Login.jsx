@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login, setSession } from '../services/api';
-import { Lock, Mail, AlertCircle } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Shield } from 'lucide-react';
+import PasswordInput from '../components/PasswordInput';
 import { useLang } from '../i18n/LanguageContext';
 
 const Login = () => {
@@ -10,6 +11,8 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [otpRequired, setOtpRequired] = useState(false);
+  const [adminOtp, setAdminOtp] = useState('');
   const [infoMsg, setInfoMsg] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'pending') {
@@ -35,9 +38,10 @@ const Login = () => {
     try {
       let data;
       // Admin login is detected server-side (env-configured creds) via the same route.
-      data = await login(email, password);
+      data = await login(email, password, otpRequired ? adminOtp : undefined);
 
       if (data.success) {
+        setOtpRequired(false);
         setSession(data);
         localStorage.setItem('user', JSON.stringify(data.user));
         if (data.user.language) setLang(data.user.language);
@@ -50,6 +54,11 @@ const Login = () => {
         setError(t(data.message || 'Login failed'));
       }
     } catch (err) {
+      if (err.response?.data?.otpRequired) {
+        setOtpRequired(true);
+        setError(err.response.data.message || 'Verification code required');
+        return;
+      }
       console.error(err);
       setError(t(err.response?.data?.message || 'Server error. Please try again.'));
     } finally {
@@ -113,19 +122,35 @@ const Login = () => {
 
           <div className="form-group">
             <label>{t('Password')}</label>
-            <div style={styles.inputWrapper}>
-              <Lock size={18} style={styles.inputIcon} />
-              <input
-                type="password"
-                className="form-control"
-                style={styles.input}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+            <PasswordInput
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+              icon={Lock}
+            />
           </div>
+
+          {otpRequired && (
+            <div className="form-group">
+              <label>{t('Verification code')}</label>
+              <div style={styles.inputWrapper}>
+                <Shield size={18} style={styles.inputIcon} />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  className="form-control"
+                  style={styles.input}
+                  placeholder="123456"
+                  value={adminOtp}
+                  onChange={(e) => setAdminOtp(e.target.value.replace(/\D/g, ''))}
+                  required
+                />
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
@@ -144,6 +169,12 @@ const Login = () => {
         <div style={styles.footerLink}>
           {t("Don't have an account?")}{' '}
           <Link to="/register" style={styles.link}>{t('Create Account')}</Link>
+        </div>
+
+        <div style={{ ...styles.footerLink, marginTop: '0.9rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          <a href="/legal/terms" target="_blank" rel="noreferrer" style={styles.smallLink}>Terms</a>
+          {' · '}
+          <a href="/legal/privacy" target="_blank" rel="noreferrer" style={styles.smallLink}>Privacy</a>
         </div>
       </div>
     </div>
@@ -235,6 +266,10 @@ const styles = {
   link: {
     color: 'var(--primary-orange)',
     fontWeight: '600',
+  },
+  smallLink: {
+    color: 'var(--text-muted)',
+    textDecoration: 'underline',
   },
 };
 

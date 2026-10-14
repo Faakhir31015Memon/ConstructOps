@@ -14,10 +14,11 @@ import { LANGUAGE_CODES, DEFAULT_LANGUAGE } from '../config/languages.js';
 import { sendMail, passwordResetEmail } from '../services/mail.service.js';
 import serverError from '../utils/serverError.js';
 import logger from '../utils/logger.js';
+import { verifyTotp } from '../utils/totp.js';
 
-const PASSWORD_POLICY = /^(?=.*[A-Za-z])(?=.*\d).{8,72}$/;
+const PASSWORD_POLICY = /^(?=[^A-Z]*[A-Z])(?=[^a-z]*[a-z])(?=\D*\d)(?=.*[^A-Za-z0-9\s]).{8,72}$/;
 const PASSWORD_POLICY_MESSAGE =
-  'Password must be at least 8 characters long and include letters and numbers';
+  'Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number and a symbol';
 const RESET_TTL_MINUTES = Number(process.env.PASSWORD_RESET_TTL_MINUTES || 30);
 
 const safeCompare = (a, b) => {
@@ -32,6 +33,22 @@ const verifyAdminCredentials = (normalizedEmail, password) => {
   const adminPassword = process.env.ADMIN_PASSWORD || '';
   if (!adminEmail || !adminPassword) return false;
   return normalizedEmail === adminEmail && safeCompare(password, adminPassword);
+};
+
+// Optional TOTP second factor for system admin: set ADMIN_TOTP_SECRET (base32) to enforce.
+// Returns null when the login may proceed, otherwise the JSON error body to send.
+const adminOtpGate = (req) => {
+  const totpSecret = (process.env.ADMIN_TOTP_SECRET || '').trim();
+  if (!totpSecret) return null;
+  const otp = String(req.body.adminOtp || '').trim();
+  if (!otp) {
+    return { status: 401, body: { success: false, otpRequired: true, message: 'Enter your authenticator app code to continue' } };
+  }
+  if (!verifyTotp(totpSecret, otp)) {
+    logger.warn('Admin login with invalid authenticator code', { email: String(req.body.email || '').toLowerCase() });
+    return { status: 401, body: { success: false, otpRequired: true, message: 'Invalid email or authenticator code' } };
+  }
+  return null;
 };
 
 const publicUser = (user, company) => ({
@@ -62,6 +79,14 @@ export const registerUser = async (req, res) => {
   try {
     if (!name || !email || !password || !companyName) {
       return res.status(400).json({ success: false, message: 'All fields (name, email, password, companyName) are required' });
+    }
+
+    if (!req.body.acceptsTerms) {
+      return res.status(400).json({
+        success: false,
+        termsRequired: true,
+        message: 'Please accept the Terms of Service and Privacy Policy to create your account',
+      });
     }
 
     if (!PASSWORD_POLICY.test(password)) {
@@ -127,6 +152,8 @@ export const loginUser = async (req, res) => {
 
     // Direct Admin login support via regular login route
     if (verifyAdminCredentials(normalizedEmail, password)) {
+      const gate = adminOtpGate(req);
+      if (gate) return res.status(gate.status).json(gate.body);
       return res.json({
         success: true,
         token: signAdminToken(normalizedEmail),
@@ -307,10 +334,15 @@ export const requestPasswordReset = async (req, res) => {
     });
 
     logger.info('Password reset requested', { userId: String(user._id), delivered: mailResult.delivered });
+    if (!mailResult.delivered) {
+      // The link exists only in server logs unless a dev explicitly opts in below.
+      logger.warn('Reset email not delivered — use this link to finish the reset', { resetUrl });
+    }
 
-    // Outside production there is usually no SMTP account configured, so the link is
-    // returned to the caller for testing. It is never included in a production response.
-    const devFallback = process.env.NODE_ENV !== 'production' && !mailResult.delivered
+    // A live reset link must never ride along in an API response by default: a
+    // deployment with no SMTP and an unset NODE_ENV would otherwise hand out an
+    // account-takeover URL to anyone who asks. Opt in explicitly for local testing.
+    const devFallback = process.env.EXPOSE_RESET_LINK === 'true' && !mailResult.delivered
       ? { resetUrl, note: 'Email delivery is not configured in this environment; use this link to finish the reset.' }
       : {};
 
@@ -408,6 +440,8 @@ export const adminLogin = (req, res) => {
   const normalizedEmail = String(email || '').trim().toLowerCase();
 
   if (verifyAdminCredentials(normalizedEmail, password)) {
+    const gate = adminOtpGate(req);
+    if (gate) return res.status(gate.status).json(gate.body);
     return res.json({
       success: true,
       token: signAdminToken(normalizedEmail),

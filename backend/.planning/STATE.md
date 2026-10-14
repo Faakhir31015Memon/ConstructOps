@@ -1,5 +1,10 @@
 # Project State
 
+> **HISTORICAL — planning snapshot from 2026-05-19, not maintained.**
+> The as-built source of truth is `PROJECT_WORKFLOW_GUIDE.md` (repo root) and
+> `backend/docs/` (architecture, API, security, roadmap, business model).
+> Do not cite progress from this folder in status reports or investor material.
+
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-05-19)

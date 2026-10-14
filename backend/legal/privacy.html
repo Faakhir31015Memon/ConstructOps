@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ConstructOps — Privacy Policy</title>
+<meta name="robots" content="noindex" />
+<style>
+  :root { --ink:#1E1E1E; --orange:#FF6B00; --muted:#5c6470; --line:#e6e8ec; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',Arial,sans-serif; color:var(--ink); background:#f7f8fa; line-height:1.65; }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:18px 0; }
+  .wrap { max-width:820px; margin:0 auto; padding:0 20px; }
+  .brand { font-size:1.3rem; font-weight:800; color:var(--ink); text-decoration:none; }
+  .brand span { color:var(--orange); }
+  main { background:#fff; margin:28px auto; max-width:820px; padding:36px 40px; border-radius:12px; border:1px solid var(--line); }
+  h1 { font-size:1.6rem; margin-top:0; }
+  h2 { font-size:1.12rem; margin:28px 0 8px; }
+  h3 { font-size:1rem; margin:18px 0 6px; }
+  .updated { color:var(--muted); font-size:.9rem; }
+  p, li { font-size:.95rem; }
+  ul { padding-left:22px; }
+  table { width:100%; border-collapse:collapse; font-size:.9rem; margin:10px 0; }
+  th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; }
+  th { background:#f2f3f5; }
+  footer { text-align:center; color:var(--muted); font-size:.85rem; padding:0 20px 40px; }
+  a { color:var(--orange); }
+  @media (max-width:640px){ main{padding:24px 18px;} }
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="brand" href="/">Construct<span>Ops</span></a></div></header>
+<main>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: 14 October 2026</p>
+  <p>This policy explains what personal data ConstructOps ("we", operated by Faakhir Memon, Pakistan)
+  collects through its website and SaaS platform, why we collect it, how it is protected, and what
+  rights you have. It applies to account holders ("Customers") and to the site-team individuals whose
+  records Customers enter into the platform.</p>
+
+  <h2>1. Data We Collect</h2>
+  <h3>1.1 Account &amp; company data</h3>
+  <ul>
+    <li>Name, email address, hashed password, role and language preference of each user.</li>
+    <li>Company name and workspace configuration.</li>
+    <li>Subscription records: plan, payment proofs, bank transaction references (e.g. TRX IDs), and
+    the name/account number you voluntarily include in payment notes.</li>
+  </ul>
+  <h3>1.2 Operational data entered by Customers</h3>
+  <ul>
+    <li>Project, budget, expense, material, contract and payment records.</li>
+    <li>Worker and contractor records entered by Customers — names, contact numbers, CNIC where the
+    Customer chooses to record it, attendance and wage data.</li>
+    <li>Site photos and daily reports uploaded by Customers.</li>
+  </ul>
+  <p>For this category ConstructOps acts as a data processor on the Customer's behalf; the Customer
+  is responsible for lawfully collecting and entering this data.</p>
+  <h3>1.3 Technical data</h3>
+  <ul>
+    <li>Log data: IP address, browser/device information, request timestamps and error traces needed
+    for security and reliability.</li>
+    <li>Browser storage (localStorage) for session tokens and interface language. We do not use
+    advertising cookies or third-party trackers.</li>
+  </ul>
+
+  <h2>3. How We Use Data</h2>
+  <ul>
+    <li>Providing the Service: dashboards, reports, exports, alerts and the in-app assistant.</li>
+    <li>Account authentication, subscription verification and fraud prevention.</li>
+    <li>Sending transactional messages you requested: password resets, digests (WhatsApp/SMS/email
+    where enabled), payment verification notices.</li>
+    <li>Improving reliability: aggregated, non-identifying statistics and error monitoring.</li>
+    <li>We do <strong>not</strong> sell personal data and we do not use your project data to train
+    third-party AI models; assistant answers are computed from your own tenant-scoped workspace data.</li>
+  </ul>
+
+  <h2>4. Legal Basis</h2>
+  <p>We process personal data on the basis of (a) performance of our contract with you (the Terms of
+  Service), (b) your consent where consent is the appropriate basis (e.g. optional digests), and
+  (c) legitimate interests in securing and operating the Service.</p>
+
+  <h2>5. Who We Share Data With</h2>
+  <table>
+    <tr><th>Recipient</th><th>Purpose</th></tr>
+    <tr><td>MongoDB Atlas (database hosting)</td><td>Storing workspace data</td></tr>
+    <tr><td>Render / cloud hosting</td><td>Running the application</td></tr>
+    <tr><td>JazzCash / Easypaisa gateway (when enabled)</td><td>Processing subscription checkout</td></tr>
+    <tr><td>Bank / payment rails (manual transfer)</td><td>Verifying submitted payments</td></tr>
+    <tr><td>SMTP email provider (when enabled)</td><td>Password resets and notifications</td></tr>
+    <tr><td>Cloudinary / object storage (when enabled)</td><td>Storing site photos</td></tr>
+    <tr><td>Error-monitoring service (when enabled)</td><td>Application stability</td></tr>
+  </table>
+  <p>Each provider is bound by confidentiality obligations. We may also disclose data when required by
+  a lawful order of a Pakistani court or regulator, with notice to you where legally permitted.
+  Your workspace data is never shared across tenants: every query is scoped to your company ID.</p>
+
+  <h2>6. Data Retention</h2>
+  <ul>
+    <li>Account and workspace data: retained while your company is active.</li>
+    <li>After a Customer deletes a company workspace, related records (projects, workers, reports,
+    photos) are cascade-deleted from the primary database; automatic backups age out and are purged
+    within a maximum of 14 backup cycles.</li>
+    <li>Subscription/legal records (invoices, payment proofs) are retained as required for financial
+    and tax compliance.</li>
+    <li>Server logs: up to 12 months.</li>
+  </ul>
+
+  <h2>7. Security</h2>
+  <p>Passwords are bcrypt-hashed; sessions use short-lived tokens with revocation. All API traffic is
+  TLS-encrypted. Tenant isolation, field whitelisting, injection sanitization, rate limiting and signed
+  payment webhooks are enforced in the platform. No system is perfectly secure — report concerns to
+  the contact below and we will act promptly.</p>
+
+  <h2>8. Your Rights</h2>
+  <p>Subject to applicable Pakistani law, you may request: access to your personal data, correction,
+  deletion of your account, or a portable export of your workspace (available anytime via PDF/Excel
+  export and account deletion). Workers or contractors whose data was entered by a Customer should
+  ask that Customer to correct or remove it. To exercise rights, email us — we respond within 30 days.</p>
+
+  <h2>9. Children</h2>
+  <p>The Service is not directed at persons under 16, and we do not knowingly collect their data.</p>
+
+  <h2>10. Changes</h2>
+  <p>We will post updates to this page and note the effective date; material changes are also announced
+  in the app.</p>
+
+  <h2>11. Contact</h2>
+  <p>Data controller: Faakhir Memon, ConstructOps.<br />
+  Email: <a href="mailto:privacy@constructops.app">privacy@constructops.app</a>
+  (replace with your official address once the domain is live).<br />
+  Related document: <a href="/legal/terms">Terms of Service</a>.</p>
+</main>
+<footer>© 2026 ConstructOps — Faakhir Memon. All rights reserved.</footer>
+</body>
+</html>

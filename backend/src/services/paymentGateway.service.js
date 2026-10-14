@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import logger from '../utils/logger.js';
 
 // Live checkout is enabled per-provider only when its API credentials are present.
 // Without credentials every payment degrades to the verified manual flow.
@@ -125,4 +126,27 @@ export const verifyWebhookSignature = (rawBody, signature) => {
   const a = Buffer.from(expected);
   const b = Buffer.from(String(signature).toUpperCase());
   return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
+
+// Surfaced once at boot so a half-configured gateway never fails silently in
+// front of a customer at checkout.
+export const warnGatewayConfig = () => {
+  for (const [id, cfg] of Object.entries(PROVIDER_ENV)) {
+    const set = cfg.required.filter((key) => Boolean(process.env[key]));
+    if (set.length > 0 && set.length < cfg.required.length) {
+      const missing = cfg.required.filter((key) => !process.env[key]);
+      logger.warn(`${cfg.label} gateway half-configured — live checkout stays off until env vars exist`, { missing });
+    }
+  }
+  const availability = getGatewayAvailability();
+  const live = Object.values(availability).filter((p) => p.live).length;
+  if (live && !process.env.GATEWAY_WEBHOOK_SECRET) {
+    logger.warn('Live gateway enabled but GATEWAY_WEBHOOK_SECRET missing — signed confirmations will all be rejected');
+  }
+  if (live && !process.env.GATEWAY_RETURN_URL) {
+    logger.warn('Live gateway enabled but GATEWAY_RETURN_URL missing — customers will not be redirected back after checkout');
+  }
+  if (!live) {
+    logger.info('No live payment gateway configured — all subscription payments use the verified manual flow');
+  }
 };

@@ -8,6 +8,7 @@ import {
   revokeContractor,
 } from '../services/api';
 import { useLang } from '../i18n/LanguageContext';
+import PasswordInput from '../components/PasswordInput';
 import {
   UserPlus,
   Users,
@@ -392,9 +393,7 @@ const Contractors = () => {
               </div>
               <div className="form-group">
                 <label>{t('Temporary Password')}</label>
-                <input
-                  type="password"
-                  className="form-control"
+                <PasswordInput
                   placeholder={t('Set a strong password')}
                   value={cPassword}
                   onChange={(e) => setCPassword(e.target.value)}

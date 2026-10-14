@@ -24,6 +24,10 @@ export default defineConfig({
         target: 'http://127.0.0.1:5000',
         changeOrigin: true,
       },
+      '/legal': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+      },
     },
   },
   preview: {
@@ -35,6 +39,10 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/uploads': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+      },
+      '/legal': {
         target: 'http://127.0.0.1:5000',
         changeOrigin: true,
       },

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register, setSession } from '../services/api';
 import { User, Lock, Mail, Building2, AlertCircle } from 'lucide-react';
+import PasswordInput, { passwordMeetsPolicy } from '../components/PasswordInput';
 import { useLang } from '../i18n/LanguageContext';
 
 const Register = () => {
@@ -12,15 +13,24 @@ const Register = () => {
   const [companyName, setCompanyName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [acceptsTerms, setAcceptsTerms] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (!acceptsTerms) {
+      setError(t('Please accept the Terms of Service and Privacy Policy first'));
+      return;
+    }
+    if (!passwordMeetsPolicy(password)) {
+      setError(t('Password does not meet the requirements below yet'));
+      return;
+    }
     setLoading(true);
 
     try {
-      const data = await register(name, email, password, companyName, lang);
+      const data = await register(name, email, password, companyName, lang, acceptsTerms);
       if (data.success) {
         setSession(data);
         localStorage.setItem('user', JSON.stringify(data.user));
@@ -117,18 +127,30 @@ const Register = () => {
 
           <div className="form-group">
             <label>{t('Password')}</label>
-            <div style={styles.inputWrapper}>
-              <Lock size={18} style={styles.inputIcon} />
-              <input
-                type="password"
-                className="form-control"
-                style={styles.input}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+            <PasswordInput
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              required
+              icon={Lock}
+              showRules
+            />
+          </div>
+
+          <div className="form-group" style={styles.consentRow}>
+            <input
+              type="checkbox"
+              id="accept-terms"
+              checked={acceptsTerms}
+              onChange={(e) => setAcceptsTerms(e.target.checked)}
+              style={styles.consentBox}
+            />
+            <label htmlFor="accept-terms" style={styles.consentLabel}>
+              {t('I agree to the')}{' '}
+              <a href="/legal/terms" target="_blank" rel="noreferrer" style={styles.link}>{t('Terms of Service')}</a>{' '}
+              {t('and')}{' '}
+              <a href="/legal/privacy" target="_blank" rel="noreferrer" style={styles.link}>{t('Privacy Policy')}</a>
+            </label>
           </div>
 
           <button
@@ -144,6 +166,12 @@ const Register = () => {
         <div style={styles.footerLink}>
           {t('Already have an account?')}{' '}
           <Link to="/login" style={styles.link}>{t('Log In')}</Link>
+        </div>
+
+        <div style={styles.legalRow}>
+          <a href="/legal/terms" target="_blank" rel="noreferrer">{t('Terms')}</a>
+          {' · '}
+          <a href="/legal/privacy" target="_blank" rel="noreferrer">{t('Privacy')}</a>
         </div>
       </div>
     </div>
@@ -218,6 +246,30 @@ const styles = {
     textAlign: 'center',
     marginTop: '1.5rem',
     fontSize: '0.875rem',
+    color: 'var(--text-muted)',
+  },
+  consentRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '0.6rem',
+    marginTop: '1.25rem',
+  },
+  consentBox: {
+    marginTop: '0.25rem',
+    width: '16px',
+    height: '16px',
+    accentColor: 'var(--primary-orange)',
+    flexShrink: 0,
+  },
+  consentLabel: {
+    fontSize: '0.85rem',
+    color: 'var(--text-muted)',
+    cursor: 'pointer',
+  },
+  legalRow: {
+    textAlign: 'center',
+    marginTop: '0.9rem',
+    fontSize: '0.8rem',
     color: 'var(--text-muted)',
   },
   link: {

@@ -32,6 +32,7 @@ import uploadRoutes from './routes/upload.routes.js';
 import auditRoutes from './routes/audit.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import metricsRoutes from './routes/metrics.routes.js';
+import legalRoutes from './routes/legal.routes.js';
 
 const app = express();
 
@@ -114,6 +115,10 @@ app.get('/api/v1/health', async (req, res) => {
 // Uploaded report photos are served as static files (referenced by URL, never base64 in JSON).
 app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d', immutable: true }));
 
+// Public legal documents — mounted before the SPA catch-all so /legal/* never
+// falls through to index.html.
+app.use('/legal', legalRoutes);
+
 // A serverless invocation is fresh per cold start, so the connection opens on the
 // first request that needs it rather than at module load.
 app.use(async (req, res, next) => {
@@ -183,6 +188,10 @@ app.use((err, req, res, next) => {
     statusCode,
     userId: req.user?._id,
   });
+  if (statusCode >= 500) {
+    import('./config/monitoring.js').then(({ captureException }) =>
+      captureException(err, { method: req.method, path: req.originalUrl, userId: String(req.user?._id || '') }));
+  }
   res.status(statusCode).json({
     success: false,
     message: statusCode >= 500 ? 'Something went wrong on our side. Please try again.' : err.message,

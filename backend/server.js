@@ -4,21 +4,31 @@ import mongoose from 'mongoose';
 import app from './src/app.js';
 import connectDB from './src/config/db.js';
 import { startDigestScheduler } from './src/services/digestScheduler.service.js';
+import startBackupScheduler from './src/services/backupScheduler.service.js';
+import { warnGatewayConfig } from './src/services/paymentGateway.service.js';
+import { initMonitoring, captureException } from './src/config/monitoring.js';
 import logger from './src/utils/logger.js';
 
 const PORT = process.env.PORT || 5000;
 
+await initMonitoring();
+warnGatewayConfig();
+
 process.on('uncaughtException', (err) => {
   logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
+  captureException(err, { type: 'uncaughtException' });
 });
 
 process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled Rejection', { reason: reason instanceof Error ? reason.message : String(reason) });
+  const message = reason instanceof Error ? reason.message : String(reason);
+  logger.error('Unhandled Rejection', { reason: message });
+  if (reason instanceof Error) captureException(reason, { type: 'unhandledRejection' });
 });
 
 // Connect to database
 connectDB().then(() => {
   startDigestScheduler();
+  startBackupScheduler();
 }).catch(err => {
   logger.error('Failed to connect to MongoDB', { error: err.message });
 });

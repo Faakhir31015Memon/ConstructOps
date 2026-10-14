@@ -105,13 +105,13 @@ API.interceptors.response.use(
 );
 
 // --- AUTH API METHODS ---
-export const login = async (email, password) => {
-  const { data } = await API.post('/auth/login', { email, password });
+export const login = async (email, password, adminOtp) => {
+  const { data } = await API.post('/auth/login', { email, password, ...(adminOtp ? { adminOtp } : {}) });
   return data;
 };
 
-export const register = async (name, email, password, companyName, language) => {
-  const { data } = await API.post('/auth/register', { name, email, password, companyName, language });
+export const register = async (name, email, password, companyName, language, acceptsTerms) => {
+  const { data } = await API.post('/auth/register', { name, email, password, companyName, language, acceptsTerms: Boolean(acceptsTerms) });
   return data;
 };
 
@@ -354,8 +354,8 @@ export const markAlertRead = async (id) => {
 };
 
 // --- ADMIN & GENERAL DASHBOARD API METHODS ---
-export const loginAdmin = async (email, password) => {
-  const { data } = await API.post('/auth/admin/login', { email, password });
+export const loginAdmin = async (email, password, adminOtp) => {
+  const { data } = await API.post('/auth/admin/login', { email, password, ...(adminOtp ? { adminOtp } : {}) });
   return data;
 };
 

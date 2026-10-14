@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertCircle, CheckCircle2, CreditCard, KeyRound, LogOut } from 'lucide-react';
 import { changePassword, logoutRequest, clearSession, getMyPayments, subscriptionInvoiceUrl } from '../services/api';
 import InvoiceButton from '../components/InvoiceButton';
+import PasswordInput, { passwordMeetsPolicy } from '../components/PasswordInput';
 import { useLang } from '../i18n/LanguageContext';
 
 const Account = () => {
@@ -43,6 +44,10 @@ const Account = () => {
     e.preventDefault();
     setError('');
     setNotice('');
+    if (!passwordMeetsPolicy(next)) {
+      setError(t('Password does not meet the requirements below yet'));
+      return;
+    }
     if (next !== confirm) {
       setError(t('Both new passwords must match'));
       return;
@@ -107,38 +112,34 @@ const Account = () => {
         <form onSubmit={handleSubmit} style={styles.form}>
           <div className="form-group">
             <label>{t('Current password')}</label>
-            <input
-              type="password"
-              className="form-control"
+            <PasswordInput
               value={current}
               onChange={(e) => setCurrent(e.target.value)}
+              autoComplete="current-password"
               required
             />
           </div>
           <div className="form-group">
             <label>{t('New password')}</label>
-            <input
-              type="password"
-              className="form-control"
+            <PasswordInput
               value={next}
               onChange={(e) => setNext(e.target.value)}
+              autoComplete="new-password"
               required
-              minLength={8}
+              showRules
             />
           </div>
           <div className="form-group">
             <label>{t('Confirm new password')}</label>
-            <input
-              type="password"
-              className="form-control"
+            <PasswordInput
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
+              autoComplete="new-password"
               required
-              minLength={8}
             />
           </div>
           <p style={styles.hint}>
-            {t('At least 8 characters with letters and numbers. Signing this in ends every other active session.')}
+            {t('8+ characters with uppercase, lowercase, a number and a symbol. Saving this ends every other active session.')}
           </p>
           <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? t('Saving...') : t('Update password')}

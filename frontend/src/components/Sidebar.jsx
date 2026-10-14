@@ -13,6 +13,7 @@ import {
   X
 } from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
+import { logoutRequest, clearSession } from '../services/api';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();

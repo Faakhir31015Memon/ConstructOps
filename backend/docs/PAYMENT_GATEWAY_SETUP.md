@@ -49,6 +49,11 @@ APP_CLIENT_URL=https://<domain>
 Checkout only offers a provider whose `live` flag is true; otherwise it shows the manual
 transfer instructions. This is why the app is demoable without any credentials.
 
+At every boot the backend logs a warning for a half-configured gateway (some `GATEWAY_*`
+vars set but not all), for a live gateway without `GATEWAY_WEBHOOK_SECRET`, and without
+`GATEWAY_RETURN_URL` — so misconfiguration surfaces in the log instead of failing in front
+of a customer at checkout.
+
 ## 3. Request flow
 
 1. Owner picks a plan → `POST /api/v1/subscription/payment` with `method: jazzcash|easypaisa`.
