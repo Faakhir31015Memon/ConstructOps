@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { getPayroll, downloadInvoice, getPayrollInvoiceUrl } from '../services/api';
+import { getPayroll, payrollInvoiceUrl } from '../services/api';
+import InvoiceButton from './InvoiceButton';
 import { FileDown, Users, Wallet } from 'lucide-react';
 
 const currentMonth = () => new Date().toISOString().slice(0, 7);
@@ -11,7 +12,6 @@ const PayrollPanel = ({ projectId }) => {
   const [payroll, setPayroll] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
 
   const load = async (value = month) => {
     setLoading(true);
@@ -32,23 +32,6 @@ const PayrollPanel = ({ projectId }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
-  const handlePdf = async () => {
-    setBusy(true);
-    try {
-      const { blob, filename } = await downloadInvoice(getPayrollInvoiceUrl(projectId, month));
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      setError('The payroll statement could not be downloaded.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
     <div>
       <div style={styles.header}>
@@ -66,10 +49,11 @@ const PayrollPanel = ({ projectId }) => {
               load(e.target.value);
             }}
           />
-          <button className="btn btn-primary" onClick={handlePdf} disabled={busy || !payroll}>
-            <FileDown size={16} />
-            <span>{busy ? 'Preparing…' : 'PDF'}</span>
-          </button>
+          <InvoiceButton
+            url={payrollInvoiceUrl(projectId, month)}
+            label="Statement PDF"
+            title="Download the monthly payroll statement"
+          />
         </div>
       </div>
 

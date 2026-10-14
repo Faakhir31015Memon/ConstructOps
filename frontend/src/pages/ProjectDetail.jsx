@@ -609,6 +609,20 @@ const ProjectDetail = () => {
         >
           Contracts & Payments
         </button>
+        <button
+          onClick={() => handleTabChange('payroll')}
+          style={{...styles.tabButton, ...(activeTab === 'payroll' ? styles.activeTabButton : {})}}
+        >
+          Payroll
+        </button>
+        {(isOwner || isManager || user?.role === 'admin') && (
+          <button
+            onClick={() => handleTabChange('digest')}
+            style={{...styles.tabButton, ...(activeTab === 'digest' ? styles.activeTabButton : {})}}
+          >
+            WhatsApp Digest
+          </button>
+        )}
         {(isOwner || isManager || user?.role === 'admin') && (
           <button 
             onClick={() => handleTabChange('contractors')} 
@@ -859,12 +873,37 @@ const ProjectDetail = () => {
               />
             </div>
             {user && !isAccountant && (
-              <button onClick={() => setShowWorkerModal(true)} className="btn btn-primary">
-                <UserPlus size={18} />
-                <span>{t('Add Worker Profile')}</span>
-              </button>
+              <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                {offlinePending > 0 && (
+                  <span style={styles.offlineBadge}>
+                    <CloudOff size={14} />
+                    {offlinePending} waiting to sync
+                  </span>
+                )}
+                <button
+                  className="btn"
+                  onClick={() => handleBulkAttendance('present')}
+                  disabled={bulkBusy || workers.length === 0}
+                >
+                  <CheckCheck size={16} />
+                  <span>Mark all present</span>
+                </button>
+                <button
+                  className="btn"
+                  onClick={() => handleBulkAttendance('absent')}
+                  disabled={bulkBusy || workers.length === 0}
+                >
+                  <span>All absent</span>
+                </button>
+                <button onClick={() => setShowWorkerModal(true)} className="btn btn-primary">
+                  <UserPlus size={18} />
+                  <span>{t('Add Worker Profile')}</span>
+                </button>
+              </div>
             )}
           </div>
+
+          {actionMessage && <div style={styles.inlineNotice}>{actionMessage}</div>}
 
           <div style={{ marginTop: '1.5rem' }}>
             <div className="table-container">
@@ -930,6 +969,20 @@ const ProjectDetail = () => {
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 3b. PAYROLL TAB */}
+      {activeTab === 'payroll' && (
+        <div style={styles.tabContent}>
+          <PayrollPanel projectId={id} />
+        </div>
+      )}
+
+      {/* 3c. WHATSAPP DIGEST TAB */}
+      {activeTab === 'digest' && (
+        <div style={styles.tabContent}>
+          <DigestPanel projectId={id} projectName={dashboardData.projectName} />
         </div>
       )}
 
@@ -2171,6 +2224,25 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all var(--transition-fast)',
+  },
+  offlineBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.35rem',
+    padding: '0.3rem 0.7rem',
+    borderRadius: 999,
+    background: '#FEF3C7',
+    color: '#92400E',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+  },
+  inlineNotice: {
+    marginTop: '0.75rem',
+    background: '#ECFDF5',
+    color: '#065F46',
+    padding: '0.55rem 0.9rem',
+    borderRadius: 'var(--radius-sm)',
+    fontSize: '0.8rem',
   },
   stockCard: {
     display: 'flex',

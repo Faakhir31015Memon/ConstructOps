@@ -473,9 +473,9 @@ export const downloadInvoice = async (url) => {
   return { blob: response.data, filename };
 };
 
-export const getSubscriptionInvoice = (paymentId) => downloadInvoice(`/subscription/invoice/${paymentId}`);
-export const getContractorPaymentInvoice = (paymentId) => downloadInvoice(`/contractors/invoice/${paymentId}`);
-export const getPayrollInvoiceUrl = (projectId, month) =>
+export const subscriptionInvoiceUrl = (paymentId) => `/subscription/invoice/${paymentId}`;
+export const contractorPaymentInvoiceUrl = (paymentId) => `/contractors/invoice/${paymentId}`;
+export const payrollInvoiceUrl = (projectId, month) =>
   `/workers/payroll/invoice?projectId=${projectId}&month=${encodeURIComponent(month || '')}`;
 
 // --- EXPORT REPORT API METHODS ---
