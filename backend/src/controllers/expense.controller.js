@@ -7,6 +7,7 @@ import { pick } from '../utils/pick.js';
 import { parsePagination, paginationMeta } from '../utils/pagination.js';
 import { toObjectId, toSafeEnum } from '../middleware/sanitize.middleware.js';
 import serverError from '../utils/serverError.js';
+import logger from '../utils/logger.js';
 
 const EXPENSE_CATEGORIES = ['material', 'labor', 'machinery', 'transport', 'subcontractor', 'utilities', 'permits', 'safety', 'misc'];
 const EXPENSE_STATUSES = ['pending', 'approved', 'rejected'];
@@ -128,7 +129,7 @@ export const addExpense = async (req, res) => {
       expense,
     });
   } catch (error) {
-    console.error('Add expense error:', error);
+    logger.error("Add expense error", { error: error.message, stack: error.stack });
     serverError(res, error, req);
   }
 };
@@ -237,7 +238,7 @@ export const reviewExpense = async (req, res) => {
       totalSpent: updatedSpent,
     });
   } catch (error) {
-    console.error('Review expense error:', error);
+    logger.error("Review expense error", { error: error.message, stack: error.stack });
     serverError(res, error, req);
   }
 };

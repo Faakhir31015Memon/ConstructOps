@@ -6,6 +6,7 @@ import ProjectAssignment from '../models/projectAssignment.model.js';
 import { parsePagination, paginationMeta } from '../utils/pagination.js';
 import { toObjectId, escapeRegex } from '../middleware/sanitize.middleware.js';
 import serverError from '../utils/serverError.js';
+import logger from '../utils/logger.js';
 
 // @desc    Add material definition to project
 // @route   POST /api/v1/materials
@@ -177,7 +178,7 @@ export const logMaterialTransaction = async (req, res) => {
     await material.save();
     res.status(201).json({ success: true, log, material });
   } catch (error) {
-    console.error('Material log error:', error);
+    logger.error("Material log error", { error: error.message, stack: error.stack });
     serverError(res, error, req);
   }
 };

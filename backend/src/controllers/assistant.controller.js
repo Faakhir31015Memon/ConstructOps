@@ -7,6 +7,7 @@ import {
   llmAvailable,
   roleSuggestions,
 } from '../services/assistant.service.js';
+import logger from '../utils/logger.js';
 
 const MAX_MESSAGES = 12;
 const MAX_CONTENT_LENGTH = 1000;
@@ -51,13 +52,13 @@ export const assistantChat = async (req, res) => {
           return res.json({ success: true, reply, lang, source: 'llm' });
         }
       } catch (error) {
-        console.error('Assistant LLM call failed, using built-in knowledge:', error.message);
+        logger.error("Assistant LLM call failed, using built-in knowledge", { error: error.message });
       }
     }
 
     res.json({ success: true, reply: answerWithKnowledge(lastQuestion, context, lang), lang, source: 'knowledge' });
   } catch (error) {
-    console.error('Assistant chat error:', error);
+    logger.error("Assistant chat error", { error: error.message, stack: error.stack });
     res.status(500).json({ success: false, message: 'Assistant is unavailable right now.' });
   }
 };

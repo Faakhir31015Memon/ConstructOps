@@ -88,14 +88,20 @@ export const buildInvoicePdf = (doc) =>
     });
     y += 16 * Math.ceil(meta.length / 2) + 16;
 
-    // Line items table
+    // Line items table. Right-aligned columns are positioned by their RIGHT edge;
+    // starting them at the column edge (as this once did) pushed the amounts off
+    // the page and pdfkit wrapped them into unreadable fragments.
     const cols = [0, width - 260, width - 130, width];
+    const RATE_W = 90;
+    const AMT_W = 90;
+    const rateX = MARGIN + cols[2] - RATE_W;
+    const amtX = MARGIN + cols[3] - AMT_W;
     pdf.rect(MARGIN, y, width, 26).fill('#F3F4F6');
     pdf.fillColor(INK).fontSize(9).font('Helvetica-Bold');
     pdf.text('DESCRIPTION', MARGIN + 8, y + 8);
     pdf.text('QTY', MARGIN + cols[1] + 8, y + 8);
-    pdf.text('RATE', MARGIN + cols[2] + 8, y + 8, { width: 96, align: 'right' });
-    pdf.text('AMOUNT', MARGIN + cols[3] - 8, y + 8, { width: 96, align: 'right' });
+    pdf.text('RATE', rateX, y + 8, { width: RATE_W, align: 'right' });
+    pdf.text('AMOUNT', amtX, y + 8, { width: AMT_W, align: 'right' });
     y += 26;
 
     pdf.font('Helvetica').fontSize(9.5);
@@ -103,10 +109,10 @@ export const buildInvoicePdf = (doc) =>
       const rowHeight = 24;
       pdf.fillColor(INK).text(sanitize(line.description), MARGIN + 8, y + 6, { width: cols[1] - 24 });
       pdf.fillColor(MUTED).text(sanitize(line.qty ?? '-'), MARGIN + cols[1] + 8, y + 6);
-      pdf.text(line.rate === undefined ? '-' : money(line.rate, doc.currency), MARGIN + cols[2] + 8, y + 6, { width: 96, align: 'right' });
-      pdf.fillColor(INK).text(money(line.amount, doc.currency), MARGIN + cols[3] - 8, y + 6, { width: 96, align: 'right' });
+      pdf.text(line.rate === undefined ? '-' : money(line.rate, doc.currency), rateX, y + 6, { width: RATE_W, align: 'right' });
+      pdf.fillColor(INK).text(money(line.amount, doc.currency), amtX, y + 6, { width: AMT_W, align: 'right' });
       y += rowHeight;
-      pdf.moveTo(MARGIN, y).lineTo(MARGIN + width, y).strokeColor(LINE).linewidth(0.5).stroke();
+      pdf.moveTo(MARGIN, y).lineTo(MARGIN + width, y).strokeColor(LINE).lineWidth(0.5).stroke();
     });
 
     y += 14;
@@ -117,14 +123,14 @@ export const buildInvoicePdf = (doc) =>
       ...(doc.tax !== undefined && doc.tax !== null ? [['Tax', money(doc.tax, doc.currency)]] : []),
     ];
     totals.forEach(([label, value]) => {
-      pdf.fillColor(MUTED).fontSize(9.5).font('Helvetica').text(`${label}`, MARGIN + cols[2], y, { width: 110, align: 'right' });
-      pdf.fillColor(INK).text(value, MARGIN + cols[3], y, { width: 104, align: 'right' });
+      pdf.fillColor(MUTED).fontSize(9.5).font('Helvetica').text(`${label}`, amtX - 120, y, { width: 110, align: 'right' });
+      pdf.fillColor(INK).text(value, amtX, y, { width: AMT_W, align: 'right' });
       y += 15;
     });
 
-    pdf.rect(MARGIN + cols[2] - 10, y + 2, width - (cols[2] - 10), 26).fill('#FFF3E8');
-    pdf.fillColor(ACCENT).font('Helvetica-Bold').fontSize(12).text('TOTAL DUE', MARGIN + cols[2], y + 9, { width: 110, align: 'right' });
-    pdf.fillColor(INK).text(money(doc.total, doc.currency), MARGIN + cols[3], y + 9, { width: 104, align: 'right' });
+    pdf.rect(rateX - 20, y + 2, MARGIN + width - (rateX - 20), 26).fill('#FFF3E8');
+    pdf.fillColor(ACCENT).font('Helvetica-Bold').fontSize(12).text('TOTAL DUE', amtX - 130, y + 9, { width: 110, align: 'right' });
+    pdf.fillColor(INK).text(money(doc.total, doc.currency), amtX, y + 9, { width: AMT_W, align: 'right' });
     y += 40;
 
     if (doc.reference) {

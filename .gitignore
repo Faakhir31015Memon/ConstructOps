@@ -7,3 +7,10 @@ dist/
 .vscode/
 .idea/
 coverage/
+
+# Customer data must never reach the repository.
+backend/uploads/
+backend/backups/
+
+# Build artifact: the SPA bundle the single-image deploy serves.
+backend/public/

@@ -5,6 +5,7 @@ import ProjectAssignment from '../models/projectAssignment.model.js';
 import { parsePagination, paginationMeta } from '../utils/pagination.js';
 import { toObjectId } from '../middleware/sanitize.middleware.js';
 import serverError from '../utils/serverError.js';
+import logger from '../utils/logger.js';
 
 // @desc    Add daily report log (and run simulated AI evaluation)
 // @route   POST /api/v1/reports
@@ -112,7 +113,7 @@ export const createReport = async (req, res) => {
 
     res.status(201).json({ success: true, report });
   } catch (error) {
-    console.error('Create report error:', error);
+    logger.error("Create report error", { error: error.message, stack: error.stack });
     serverError(res, error, req);
   }
 };

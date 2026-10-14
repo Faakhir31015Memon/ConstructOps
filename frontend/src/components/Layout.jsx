@@ -53,7 +53,10 @@ const Layout = ({ title }) => {
   }
 
   const isExpired = subscription?.isExpired;
-  const isPaymentPending = Boolean(subscription?.pendingPayment);
+  // `locked` is the server's answer (user status = pending_payment). Deriving it
+  // from the mere existence of a pending payment hid the workspace of companies
+  // that renewed while their paid plan was still running.
+  const isPaymentPending = Boolean(subscription?.locked);
   let isAdmin = false;
   try {
     isAdmin = JSON.parse(localStorage.getItem('user') || 'null')?.role === 'admin';

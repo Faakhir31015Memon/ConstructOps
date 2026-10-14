@@ -7,6 +7,7 @@ import Attendance from '../models/attendance.model.js';
 import Expense from '../models/expense.model.js';
 import DailyReport from '../models/dailyReport.model.js';
 import serverError from '../utils/serverError.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -142,7 +143,7 @@ router.get('/', protect, async (req, res) => {
       detailedWorkers
     });
   } catch (error) {
-    console.error('Dashboard stats error:', error);
+    logger.error("Dashboard stats error", { error: error.message, stack: error.stack });
     serverError(res, error, req);
   }
 });

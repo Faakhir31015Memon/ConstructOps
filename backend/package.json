@@ -6,7 +6,12 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "backup": "node scripts/backup-db.mjs",
+    "restore": "node scripts/restore-db.mjs",
+    "ensure-indexes": "node scripts/ensure-indexes.mjs",
+    "seed:demo": "node scripts/seed-demo.mjs",
+    "test:webhook": "node scripts/test-gateway-webhook.mjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

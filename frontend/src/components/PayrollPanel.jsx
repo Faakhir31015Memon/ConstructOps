@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getPayroll, payrollInvoiceUrl } from '../services/api';
 import InvoiceButton from './InvoiceButton';
-import { FileDown, Users, Wallet } from 'lucide-react';
+import { Users, Wallet } from 'lucide-react';
 
 const currentMonth = () => new Date().toISOString().slice(0, 7);
 

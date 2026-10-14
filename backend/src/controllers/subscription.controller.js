@@ -14,6 +14,7 @@ import { validateBankInfo } from '../config/pakBanks.js';
 import { getGatewayAvailability, initiateCheckout } from '../services/paymentGateway.service.js';
 import { activatePlanForPayment } from '../services/subscriptionActivation.service.js';
 import serverError from '../utils/serverError.js';
+import logger from '../utils/logger.js';
 
 // @desc    Get plan prices (PKR) and payment gateway instructions
 // @route   GET /api/v1/subscription/plans
@@ -106,8 +107,15 @@ export const submitSubscriptionPayment = async (req, res) => {
       status: 'pending',
     });
 
-    // Lock the whole company out until the admin approves the payment
-    await User.updateMany({ companyId }, { status: 'pending_payment' });
+    const companyDoc = await Company.findById(companyId);
+
+    // Lock the workspace only when nothing entitles it any more. A company with
+    // paid time left keeps working while its renewal sits under review — the
+    // admin approval then just extends the end date.
+    const entitled = !getCompanySubscriptionDetails(companyDoc).isExpired;
+    if (!entitled) {
+      await User.updateMany({ companyId }, { status: 'pending_payment' });
+    }
 
     const wantsGateway =
       req.body.payVia === 'gateway' &&
@@ -116,7 +124,6 @@ export const submitSubscriptionPayment = async (req, res) => {
 
     if (wantsGateway) {
       try {
-        const companyDoc = await Company.findById(companyId);
         const session = await initiateCheckout({
           provider: method,
           paymentId: payment._id.toString(),
@@ -143,8 +150,11 @@ export const submitSubscriptionPayment = async (req, res) => {
         });
       } catch (error) {
         await SubscriptionPayment.deleteOne({ _id: payment._id });
-        await User.updateMany({ companyId: payment.companyId, status: 'active' });
-        console.error('Gateway checkout error:', error);
+        // Undo only the lock this request took on.
+        if (!entitled) {
+          await User.updateMany({ companyId: payment.companyId, status: 'pending_payment' }, { status: 'active' });
+        }
+        logger.error("Gateway checkout error", { error: error.message, stack: error.stack });
         return res.status(502).json({
           success: false,
           message: `${error.code === 'GATEWAY_NOT_CONFIGURED' ? 'Gateway not configured' : 'Could not start the gateway session'}. Please pay by manual ${method} transfer and submit the transaction reference instead.`,
@@ -154,11 +164,14 @@ export const submitSubscriptionPayment = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Payment submitted successfully! Your account will be activated after admin verification. You will not be able to log in until then.',
+      message: entitled
+        ? 'Payment submitted. Your current plan stays active while the admin verifies the renewal.'
+        : 'Payment submitted! Your account will be activated after admin verification. You will not be able to log in until then.',
       paymentId: payment._id,
+      locked: !entitled,
     });
   } catch (error) {
-    console.error('Subscription payment submission error:', error);
+    logger.error("Subscription payment submission error", { error: error.message, stack: error.stack });
     serverError(res, error, req);
   }
 };
@@ -224,7 +237,7 @@ export const approveSubscriptionPayment = async (req, res) => {
       subscription,
     });
   } catch (error) {
-    console.error('Payment approval error:', error);
+    logger.error("Payment approval error", { error: error.message, stack: error.stack });
     serverError(res, error, req);
   }
 };
@@ -258,7 +271,7 @@ export const rejectSubscriptionPayment = async (req, res) => {
       message: `Payment rejected. Company users set to '${restoredStatus}'.`,
     });
   } catch (error) {
-    console.error('Payment rejection error:', error);
+    logger.error("Payment rejection error", { error: error.message, stack: error.stack });
     serverError(res, error, req);
   }
 };
@@ -315,13 +328,15 @@ export const getSubscriptionStatus = async (req, res) => {
           submittedAt: pendingPayment.createdAt,
         }
       : null;
+    // A pending renewal on a still-paid plan must not hide the workspace.
+    details.locked = req.user.status === 'pending_payment';
 
     res.json({
       success: true,
       subscription: details,
     });
   } catch (error) {
-    console.error('Subscription status check error:', error);
+    logger.error("Subscription status check error", { error: error.message, stack: error.stack });
     serverError(res, error, req);
   }
 };
@@ -377,7 +392,7 @@ export const renewSubscription = async (req, res) => {
       subscription: updatedDetails,
     });
   } catch (error) {
-    console.error('Subscription renewal error:', error);
+    logger.error("Subscription renewal error", { error: error.message, stack: error.stack });
     serverError(res, error, req);
   }
 };

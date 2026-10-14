@@ -7,9 +7,12 @@ import {
   getAllSubscriptionPayments,
   approveSubscriptionPayment,
   rejectSubscriptionPayment,
+  subscriptionInvoiceUrl,
 } from '../services/api';
-import { Briefcase, Users, Layers, DollarSign, Calendar, Clock, MapPin, User, FileText, Lock, Unlock, Wallet, CheckCircle2, XCircle } from 'lucide-react';
+import { Briefcase, Users, Layers, DollarSign, Calendar, Clock, MapPin, User, FileText, Lock, Unlock, Wallet, CheckCircle2, XCircle, BarChart3 } from 'lucide-react';
 import ExportButtons from '../components/ExportButtons';
+import InvoiceButton from '../components/InvoiceButton';
+import ActivationFunnel from '../components/ActivationFunnel';
 import { useLang } from '../i18n/LanguageContext';
 
 const SvgBarChart = ({ data }) => {
@@ -415,6 +418,7 @@ const Dashboard = () => {
               <span>Users Management</span>
             </button>
             {storedUser && storedUser.role === 'admin' && (
+              <>
               <button 
                 onClick={() => setActiveTab('payments')} 
                 style={{ ...styles.tabBtn, ...(activeTab === 'payments' ? styles.activeTabBtn : {}) }}
@@ -427,6 +431,14 @@ const Dashboard = () => {
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setActiveTab('growth')}
+                style={{ ...styles.tabBtn, ...(activeTab === 'growth' ? styles.activeTabBtn : {}) }}
+              >
+                <BarChart3 size={16} />
+                <span>Activation</span>
+              </button>
+              </>
             )}
           </div>
         </div>
@@ -792,6 +804,7 @@ const Dashboard = () => {
                     <th style={styles.th}>Submitted At</th>
                     <th style={styles.th}>Status</th>
                     <th style={styles.th}>Action</th>
+                    <th style={styles.th}>Invoice</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -889,11 +902,23 @@ const Dashboard = () => {
                           </span>
                         )}
                       </td>
+                      <td style={styles.td}>
+                        {payment.status !== 'rejected' ? (
+                          <InvoiceButton url={subscriptionInvoiceUrl(payment._id)} label="PDF" />
+                        ) : (
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>-</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
+          </div>
+        )}
+        {activeTab === 'growth' && storedUser && storedUser.role === 'admin' && (
+          <div style={styles.tableWrapper}>
+            <ActivationFunnel />
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import Contract from '../models/contract.model.js';
 import Payment from '../models/payment.model.js';
 import { pick } from '../utils/pick.js';
 import serverError from '../utils/serverError.js';
+import logger from '../utils/logger.js';
 
 // @desc    Create a new project
 // @route   POST /api/v1/projects
@@ -287,7 +288,7 @@ export const getProjectDashboard = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Project dashboard fetch error:', error);
+    logger.error("Project dashboard fetch error", { error: error.message, stack: error.stack });
     serverError(res, error, req);
   }
 };

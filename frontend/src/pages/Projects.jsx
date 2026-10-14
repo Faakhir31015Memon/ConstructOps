@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProjects, createProject } from '../services/api';
 import { Plus, MapPin, DollarSign, Calendar, Sliders, PlayCircle } from 'lucide-react';
+import OnboardingChecklist from '../components/OnboardingChecklist';
 import { useLang } from '../i18n/LanguageContext';
 
 const Projects = () => {
@@ -105,6 +106,8 @@ const Projects = () => {
           </button>
         )}
       </div>
+
+      {user && ['owner', 'manager', 'admin'].includes(user.role) && <OnboardingChecklist />}
 
       {loading ? (
         <div style={styles.loading}>{t('Loading projects...')}</div>

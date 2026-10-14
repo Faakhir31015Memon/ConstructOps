@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, KeyRound, LogOut } from 'lucide-react';
-import { changePassword, logoutRequest, clearSession } from '../services/api';
+import { AlertCircle, CheckCircle2, CreditCard, KeyRound, LogOut } from 'lucide-react';
+import { changePassword, logoutRequest, clearSession, getMyPayments, subscriptionInvoiceUrl } from '../services/api';
+import InvoiceButton from '../components/InvoiceButton';
 import { useLang } from '../i18n/LanguageContext';
 
 const Account = () => {
@@ -21,6 +22,22 @@ const Account = () => {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [payments, setPayments] = useState([]);
+
+  const canSeeBilling = !user || user.role === 'owner' || user.role === 'admin' || user.role === 'accountant';
+
+  useEffect(() => {
+    if (!canSeeBilling) return undefined;
+    let alive = true;
+    getMyPayments()
+      .then((res) => {
+        if (alive && res.success) setPayments(res.payments || []);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [canSeeBilling]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -128,6 +145,56 @@ const Account = () => {
           </button>
         </form>
       </section>
+
+      {canSeeBilling && (
+        <section style={styles.card}>
+          <h2 style={styles.cardTitle}>
+            <CreditCard size={18} /> {t('Billing history')}
+          </h2>
+          {payments.length === 0 ? (
+            <p style={styles.hint}>{t('No subscription payments recorded yet.')}</p>
+          ) : (
+            <div className="table-container">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>{t('Date')}</th>
+                    <th>{t('Plan')}</th>
+                    <th>{t('Amount')}</th>
+                    <th>{t('Status')}</th>
+                    <th>{t('Invoice')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.map((p) => (
+                    <tr key={p._id}>
+                      <td>{new Date(p.createdAt).toLocaleDateString()}</td>
+                      <td>{p.plan}</td>
+                      <td>Rs {Number(p.amount).toLocaleString()}</td>
+                      <td>
+                        <span
+                          className={`badge ${
+                            p.status === 'approved' ? 'badge-success' : p.status === 'rejected' ? 'badge-danger' : 'badge-info'
+                          }`}
+                        >
+                          {p.status}
+                        </span>
+                      </td>
+                      <td>
+                        {p.status !== 'rejected' ? (
+                          <InvoiceButton url={subscriptionInvoiceUrl(p._id)} label={t('Receipt')} />
+                        ) : (
+                          <span style={styles.hint}>—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       <section style={styles.card}>
         <h2 style={styles.cardTitle}>

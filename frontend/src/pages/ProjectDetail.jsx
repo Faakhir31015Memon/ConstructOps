@@ -26,9 +26,11 @@ import {
   saveProjectContract,
   getProjectPayments,
   recordProjectPayment,
-  bulkCheckInAttendance
+  bulkCheckInAttendance,
+  contractorPaymentInvoiceUrl
 } from '../services/api';
 import ExportButtons from '../components/ExportButtons';
+import InvoiceButton from '../components/InvoiceButton';
 import PayrollPanel from '../components/PayrollPanel';
 import DigestPanel from '../components/DigestPanel';
 import { queueAttendance, queueManyAttendance, subscribeToQueue } from '../utils/offlineQueue';
@@ -99,6 +101,7 @@ const ProjectDetail = () => {
   const [actionMessage, setActionMessage] = useState('');
   const [offlinePending, setOfflinePending] = useState(0);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkConfirm, setBulkConfirm] = useState(null);
   
   // Form input States
   // 1. Worker Form
@@ -234,13 +237,20 @@ const ProjectDetail = () => {
 
   // Site supervisors mark the whole roster at the gate in one tap, then fix
   // the exceptions. Absentees are sent explicitly so the row isn't left blank.
+  const bulkMessage = (status) =>
+    status === 'present'
+      ? `Mark all ${workers.length} workers present for ${selectedDate}?`
+      : `Mark every worker absent for ${selectedDate}?`;
+
   const handleBulkAttendance = async (status) => {
     if (workers.length === 0) return;
-    const message =
-      status === 'present'
-        ? `Mark all ${workers.length} workers present for ${selectedDate}?`
-        : `Clear attendance for ${selectedDate}? Everyone will be marked absent.`;
-    if (!window.confirm(message)) return;
+    // Two taps inside the app's own UI. A native confirm() dialog reads as
+    // unfinished software on a demo screen and freezes the page behind it.
+    if (bulkConfirm !== status) {
+      setBulkConfirm(status);
+      return;
+    }
+    setBulkConfirm(null);
 
     setBulkBusy(true);
     const records = workers.map((w) => ({ workerId: w._id, date: selectedDate, status }));
@@ -880,21 +890,39 @@ const ProjectDetail = () => {
                     {offlinePending} waiting to sync
                   </span>
                 )}
-                <button
-                  className="btn"
-                  onClick={() => handleBulkAttendance('present')}
-                  disabled={bulkBusy || workers.length === 0}
-                >
-                  <CheckCheck size={16} />
-                  <span>Mark all present</span>
-                </button>
-                <button
-                  className="btn"
-                  onClick={() => handleBulkAttendance('absent')}
-                  disabled={bulkBusy || workers.length === 0}
-                >
-                  <span>All absent</span>
-                </button>
+                {bulkConfirm ? (
+                  <span style={styles.confirmStrip}>
+                    <span>{bulkMessage(bulkConfirm)}</span>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => handleBulkAttendance(bulkConfirm)}
+                      disabled={bulkBusy}
+                    >
+                      <span>Confirm</span>
+                    </button>
+                    <button className="btn" onClick={() => setBulkConfirm(null)}>
+                      <span>Cancel</span>
+                    </button>
+                  </span>
+                ) : (
+                  <>
+                    <button
+                      className="btn"
+                      onClick={() => handleBulkAttendance('present')}
+                      disabled={bulkBusy || workers.length === 0}
+                    >
+                      <CheckCheck size={16} />
+                      <span>Mark all present</span>
+                    </button>
+                    <button
+                      className="btn"
+                      onClick={() => handleBulkAttendance('absent')}
+                      disabled={bulkBusy || workers.length === 0}
+                    >
+                      <span>All absent</span>
+                    </button>
+                  </>
+                )}
                 <button onClick={() => setShowWorkerModal(true)} className="btn btn-primary">
                   <UserPlus size={18} />
                   <span>{t('Add Worker Profile')}</span>
@@ -1375,12 +1403,13 @@ const ProjectDetail = () => {
                         <th>{t('Payment Method')}</th>
                         <th>{t('Reference No.')}</th>
                         <th>{t('Status')}</th>
+                        <th>{t('Receipt')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {projectPayments.length === 0 ? (
                         <tr>
-                          <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                          <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
                             {t('No payments have been released yet.')}
                           </td>
                         </tr>
@@ -1393,6 +1422,7 @@ const ProjectDetail = () => {
                             <td><span className="badge badge-info">{p.paymentMethod.replace('_', ' ')}</span></td>
                             <td>{p.referenceNumber || 'N/A'}</td>
                             <td><span className="badge badge-success">{t('Received')}</span></td>
+                            <td><InvoiceButton url={contractorPaymentInvoiceUrl(p._id)} label="PDF" /></td>
                           </tr>
                         ))
                       )}
@@ -1404,7 +1434,7 @@ const ProjectDetail = () => {
                           <td style={{ color: 'var(--success-green)' }}>
                             Rs {projectPayments.reduce((s, p) => s + p.amount, 0).toLocaleString()}
                           </td>
-                          <td colSpan="3"></td>
+                          <td colSpan="4"></td>
                         </tr>
                       </tfoot>
                     )}
@@ -1516,11 +1546,12 @@ const ProjectDetail = () => {
                       <tr>
                         <th>{t('Date')}</th><th>{t('Contractor')}</th><th>{t('Amount (PKR)')}</th>
                         <th>{t('Payment Method')}</th><th>{t('Reference')}</th><th>{t('Recorded By')}</th>
+                        <th>{t('Invoice')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {projectPayments.length === 0 ? (
-                        <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{t('No payments released yet.')}</td></tr>
+                        <tr><td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{t('No payments released yet.')}</td></tr>
                       ) : (
                         projectPayments.map((p) => (
                           <tr key={p._id}>
@@ -1530,6 +1561,7 @@ const ProjectDetail = () => {
                             <td><span className="badge badge-info">{p.paymentMethod}</span></td>
                             <td>{p.referenceNumber || 'N/A'}</td>
                             <td>{p.recordedBy?.name || 'Admin'}</td>
+                            <td><InvoiceButton url={contractorPaymentInvoiceUrl(p._id)} label="PDF" /></td>
                           </tr>
                         ))
                       )}
@@ -1539,7 +1571,7 @@ const ProjectDetail = () => {
                         <tr style={{ backgroundColor: 'var(--bg-light)', fontWeight: '700' }}>
                           <td colSpan="2">{t('Total Disbursed')}</td>
                           <td>Rs {projectPayments.reduce((s, p) => s + p.amount, 0).toLocaleString()}</td>
-                          <td colSpan="3"></td>
+                          <td colSpan="4"></td>
                         </tr>
                       </tfoot>
                     )}
@@ -2243,6 +2275,18 @@ const styles = {
     padding: '0.55rem 0.9rem',
     borderRadius: 'var(--radius-sm)',
     fontSize: '0.8rem',
+  },
+  confirmStrip: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.6rem',
+    flexWrap: 'wrap',
+    padding: '0.35rem 0.7rem',
+    borderRadius: 'var(--radius-sm)',
+    background: '#FFF3E8',
+    color: '#7C2D12',
+    fontSize: '0.8rem',
+    fontWeight: 600,
   },
   stockCard: {
     display: 'flex',

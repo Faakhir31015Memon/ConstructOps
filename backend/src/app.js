@@ -1,4 +1,6 @@
 import './config/env.js';
+import path from 'path';
+import fs from 'fs';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -145,6 +147,21 @@ app.use('/api/v1/uploads', uploadRoutes);
 app.use('/api/v1/audit', auditRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/metrics', metricsRoutes);
+
+// Single-image deploys put the built SPA in backend/public so one origin serves UI,
+// /api/v1 and /uploads — no CORS allowlist needed. Local dev has no public/ (Vite
+// serves the UI), so the whole block is skipped there.
+const PUBLIC_DIR = path.join(process.cwd(), 'public');
+const PUBLIC_INDEX = path.join(PUBLIC_DIR, 'index.html');
+
+if (fs.existsSync(PUBLIC_INDEX)) {
+  app.use(express.static(PUBLIC_DIR));
+  // Client-side routes must answer with index.html, but never an unknown /api path.
+  app.get(/^\/(?!api\/|uploads\/).*/, (_req, res) => {
+    res.setHeader('Cache-Control', 'no-cache');
+    res.sendFile(PUBLIC_INDEX);
+  });
+}
 
 // Error Handling Middleware
 app.use((req, res, next) => {

@@ -10,7 +10,7 @@ try {
   verifyToken('probe');
 } catch (err) {
   if (err.message?.includes('JWT_SECRET')) {
-    console.error('❌ ' + err.message);
+    logger.error('JWT_SECRET is missing — the API refuses to start without it', { error: err.message });
     process.exit(1);
   }
 }

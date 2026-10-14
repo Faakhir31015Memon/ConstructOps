@@ -100,7 +100,11 @@ export const contractorPaymentInvoice = async (req, res) => {
     }
 
     const userCompanyId = req.user.companyId?._id || req.user.companyId;
-    if (req.user.role !== 'admin' && String(payment.companyId?._id || payment.companyId) !== String(userCompanyId)) {
+    const sameCompany =
+      String(payment.companyId?._id || payment.companyId) === String(userCompanyId);
+    // A subcontractor may always pull the receipt for a payment made to them.
+    const isPayee = String(payment.contractorId?._id || payment.contractorId) === String(req.user._id);
+    if (req.user.role !== 'admin' && !sameCompany && !isPayee) {
       return res.status(403).json({ success: false, message: 'This invoice belongs to another company' });
     }
 
@@ -120,7 +124,7 @@ export const contractorPaymentInvoice = async (req, res) => {
       to: {
         name: payment.contractorId?.name || 'Subcontractor',
         line1: payment.contractorId?.email || '',
-        contact: payment.contractorId ? '' : '',
+        contact: '',
       },
       dueLabel: 'Site',
       periodLabel: payment.projectId?.name || '-',
@@ -179,9 +183,9 @@ export const payrollStatement = async (req, res) => {
         rate: row.dailyWage,
         amount: row.amount,
       })),
-      subtotal: payroll.totalAmount,
+      subtotal: payroll.totals.amount,
       tax: 0,
-      total: payroll.totalAmount,
+      total: payroll.totals.amount,
       notes: payroll.rows.length > 55 ? `${payroll.rows.length - 55} more workers on the Excel export.` : '',
     };
 

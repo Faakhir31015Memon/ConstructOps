@@ -2,6 +2,7 @@ import { sameId } from '../utils/ids.js';
 import Project from '../models/project.model.js';
 import ProjectAssignment from '../models/projectAssignment.model.js';
 import { toObjectId } from './sanitize.middleware.js';
+import logger from '../utils/logger.js';
 
 /**
  * Middleware: checkProjectAccess
@@ -84,7 +85,7 @@ export const checkProjectAccess = (options = { requireOwner: false }) => {
       req.project = project;
       next();
     } catch (error) {
-      console.error('Project access verification error:', error);
+      logger.error("Project access verification error", { error: error.message, stack: error.stack });
       res.status(500).json({ success: false, message: 'Server authorization error: ' + error.message });
     }
   };

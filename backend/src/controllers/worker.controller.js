@@ -4,6 +4,7 @@ import Project from '../models/project.model.js';
 import { pick } from '../utils/pick.js';
 import { parsePagination, paginationMeta } from '../utils/pagination.js';
 import { toObjectId } from '../middleware/sanitize.middleware.js';
+import { buildPayroll } from '../services/payroll.service.js';
 import serverError from '../utils/serverError.js';
 
 // @desc    Add a worker to project
