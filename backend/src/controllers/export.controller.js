@@ -1,6 +1,9 @@
 import { buildProjectExport, buildCompanyExport } from '../services/exportData.js';
 import { buildProjectWorkbook, buildCompanyWorkbook } from '../services/exportWorkbook.js';
 import { buildExportPdf } from '../services/exportPdf.js';
+import logger from '../utils/logger.js';
+
+const GENERIC_EXPORT_ERROR = 'Export failed. Please try again or contact support.';
 
 const FORMATS = {
   xlsx: {
@@ -49,9 +52,9 @@ export const exportProjectReport = async (req, res) => {
     req.exportWarnings = result.warnings;
     return sendFile(res, req, data.project.name, format, result.buffer);
   } catch (error) {
-    console.error('Project export failed:', error);
+    logger.error('Project export failed', { error: error.message });
     if (res.headersSent) return res.end();
-    return res.status(500).json({ success: false, message: 'Export failed: ' + error.message });
+    return res.status(500).json({ success: false, message: GENERIC_EXPORT_ERROR });
   }
 };
 
@@ -70,8 +73,8 @@ export const exportCompanyReport = async (req, res) => {
     req.exportWarnings = result.warnings;
     return sendFile(res, req, data.title, format, result.buffer);
   } catch (error) {
-    console.error('Company export failed:', error);
+    logger.error('Company export failed', { error: error.message });
     if (res.headersSent) return res.end();
-    return res.status(500).json({ success: false, message: 'Export failed: ' + error.message });
+    return res.status(500).json({ success: false, message: GENERIC_EXPORT_ERROR });
   }
 };

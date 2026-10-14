@@ -3,29 +3,33 @@ import './src/config/env.js';
 import mongoose from 'mongoose';
 import app from './src/app.js';
 import connectDB from './src/config/db.js';
+import { startDigestScheduler } from './src/services/digestScheduler.service.js';
+import logger from './src/utils/logger.js';
 
 const PORT = process.env.PORT || 5000;
 
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
+  logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled Rejection', { reason: reason instanceof Error ? reason.message : String(reason) });
 });
 
 // Connect to database
-connectDB().catch(err => {
-  console.error('Failed to connect to MongoDB:', err);
+connectDB().then(() => {
+  startDigestScheduler();
+}).catch(err => {
+  logger.error('Failed to connect to MongoDB', { error: err.message });
 });
 
 const server = app.listen(PORT, () => {
-  console.log(`Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  logger.info('Server started', { port: PORT, env: process.env.NODE_ENV || 'development' });
 });
 
 // Graceful shutdown so in-flight requests finish and Mongo connections close cleanly.
 const shutdown = (signal) => {
-  console.log(`${signal} received — shutting down gracefully...`);
+  logger.info(`${signal} received — shutting down gracefully`);
   server.close(async () => {
     try {
       await mongoose.disconnect();

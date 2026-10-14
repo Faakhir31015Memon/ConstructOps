@@ -5,6 +5,7 @@ import ProjectAssignment from '../models/projectAssignment.model.js';
 import Contract from '../models/contract.model.js';
 import Payment from '../models/payment.model.js';
 import Expense from '../models/expense.model.js';
+import serverError from '../utils/serverError.js';
 
 // @desc    Add / Register a Contractor account for the company
 // @route   POST /api/v1/contractors
@@ -42,7 +43,7 @@ export const createContractor = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -80,7 +81,7 @@ export const getCompanyContractors = async (req, res) => {
 
     res.json({ success: true, contractors: result });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -135,7 +136,7 @@ export const assignContractorToProject = async (req, res) => {
       assignment,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -168,7 +169,7 @@ export const revokeContractorAssignment = async (req, res) => {
       assignment,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -212,7 +213,7 @@ export const saveContract = async (req, res) => {
 
     res.json({ success: true, message: 'Contract saved successfully', contract });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -242,7 +243,7 @@ export const getContractByProject = async (req, res) => {
 
     res.json({ success: true, contract });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -282,7 +283,7 @@ export const recordPayment = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Payment recorded successfully', payment });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -314,6 +315,6 @@ export const getPaymentsByProject = async (req, res) => {
 
     res.json({ success: true, payments });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };

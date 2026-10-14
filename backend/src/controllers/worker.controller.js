@@ -4,6 +4,7 @@ import Project from '../models/project.model.js';
 import { pick } from '../utils/pick.js';
 import { parsePagination, paginationMeta } from '../utils/pagination.js';
 import { toObjectId } from '../middleware/sanitize.middleware.js';
+import serverError from '../utils/serverError.js';
 
 // @desc    Add a worker to project
 // @route   POST /api/v1/workers
@@ -40,7 +41,7 @@ export const addWorker = async (req, res) => {
 
     res.status(201).json({ success: true, worker });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -72,7 +73,7 @@ export const getWorkers = async (req, res) => {
     ]);
     res.json({ success: true, workers, pagination: paginationMeta(page, limit, total) });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -103,7 +104,7 @@ export const updateWorker = async (req, res) => {
 
     res.json({ success: true, worker: updatedWorker });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -133,7 +134,7 @@ export const deleteWorker = async (req, res) => {
 
     res.json({ success: true, message: 'Worker and associated attendance removed' });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -184,7 +185,7 @@ export const checkInAttendance = async (req, res) => {
 
     res.json({ success: true, attendance });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -219,6 +220,110 @@ export const getAttendance = async (req, res) => {
 
     res.json({ success: true, attendance: attendanceRecords });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
+  }
+};
+
+// @desc    Monthly wage statement from attendance (days present x dailyWage)
+// @route   GET /api/v1/workers/payroll?projectId=&month=YYYY-MM
+// @access  Private (owner, manager, accountant)
+export const getPayroll = async (req, res) => {
+  try {
+    const companyId = req.user.role === 'admin' ? null : req.user.companyId?._id || req.user.companyId;
+    const payroll = await buildPayroll({
+      projectId: req.query.projectId,
+      month: req.query.month,
+      companyId,
+    });
+
+    if (!payroll) {
+      return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
+    }
+
+    res.json({ success: true, payroll });
+  } catch (error) {
+    if (error.statusCode === 400) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    serverError(res, error, req);
+  }
+};
+
+// @desc    Sync a batch of attendance rows — used by the offline site app
+// @route   POST /api/v1/workers/attendance/bulk
+// @access  Private (owner, manager, contractor)
+export const bulkCheckInAttendance = async (req, res) => {
+  const { projectId, records } = req.body;
+
+  try {
+    const projectObjectId = toObjectId(projectId);
+    if (!projectObjectId) {
+      return res.status(400).json({ success: false, message: 'Invalid projectId' });
+    }
+    if (!Array.isArray(records) || records.length === 0) {
+      return res.status(400).json({ success: false, message: 'records must be a non-empty array' });
+    }
+    if (records.length > 500) {
+      return res.status(400).json({ success: false, message: 'A maximum of 500 attendance rows can be synced at once' });
+    }
+
+    const project = await Project.findOne({
+      _id: projectObjectId,
+      ...(req.user.role !== 'admin' && { companyId: req.user.companyId }),
+    });
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found or unauthorized' });
+    }
+
+    // Only workers that really belong to this site can be marked.
+    const workers = await Worker.find({ projectId: projectObjectId }).select('_id').lean();
+    const allowed = new Set(workers.map((w) => String(w._id)));
+
+    let created = 0;
+    let updated = 0;
+    const rejected = [];
+
+    for (const record of records) {
+      const workerObjectId = toObjectId(record?.workerId);
+      const status = record?.status;
+
+      if (!workerObjectId || !allowed.has(String(workerObjectId))) {
+        rejected.push({ workerId: record?.workerId, reason: 'worker not in this project' });
+        continue;
+      }
+      if (!['present', 'absent'].includes(status)) {
+        rejected.push({ workerId: record?.workerId, reason: 'status must be present or absent' });
+        continue;
+      }
+
+      const date = new Date(record.date);
+      if (Number.isNaN(date.getTime())) {
+        rejected.push({ workerId: record?.workerId, reason: 'invalid date' });
+        continue;
+      }
+      if (date > new Date()) {
+        rejected.push({ workerId: record?.workerId, reason: 'future date' });
+        continue;
+      }
+      date.setUTCHours(0, 0, 0, 0);
+
+      // Returning null means the upsert inserted rather than matched.
+      const previous = await Attendance.findOneAndUpdate(
+        { workerId: workerObjectId, date },
+        { status, projectId: projectObjectId },
+        { upsert: true, new: false, setDefaultsOnInsert: true }
+      );
+
+      if (previous) updated += 1;
+      else created += 1;
+    }
+
+    res.json({
+      success: true,
+      summary: { received: records.length, created, updated, rejected: rejected.length },
+      rejected: rejected.slice(0, 20),
+    });
+  } catch (error) {
+    serverError(res, error, req);
   }
 };

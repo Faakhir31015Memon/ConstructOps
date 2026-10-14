@@ -6,6 +6,7 @@ import Material from '../models/material.model.js';
 import Attendance from '../models/attendance.model.js';
 import Expense from '../models/expense.model.js';
 import DailyReport from '../models/dailyReport.model.js';
+import serverError from '../utils/serverError.js';
 
 const router = express.Router();
 
@@ -142,7 +143,7 @@ router.get('/', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 });
 

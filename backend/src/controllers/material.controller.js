@@ -5,6 +5,7 @@ import Project from '../models/project.model.js';
 import ProjectAssignment from '../models/projectAssignment.model.js';
 import { parsePagination, paginationMeta } from '../utils/pagination.js';
 import { toObjectId, escapeRegex } from '../middleware/sanitize.middleware.js';
+import serverError from '../utils/serverError.js';
 
 // @desc    Add material definition to project
 // @route   POST /api/v1/materials
@@ -48,7 +49,7 @@ export const addMaterial = async (req, res) => {
 
     res.status(201).json({ success: true, material });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -91,7 +92,7 @@ export const getMaterials = async (req, res) => {
     ]);
     res.json({ success: true, materials, pagination: paginationMeta(page, limit, total) });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -177,7 +178,7 @@ export const logMaterialTransaction = async (req, res) => {
     res.status(201).json({ success: true, log, material });
   } catch (error) {
     console.error('Material log error:', error);
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -226,6 +227,6 @@ export const getMaterialLogs = async (req, res) => {
 
     res.json({ success: true, logs, pagination: paginationMeta(page, limit, total) });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };

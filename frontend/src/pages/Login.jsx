@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login } from '../services/api';
+import { login, setSession } from '../services/api';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
 
@@ -12,9 +12,16 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [infoMsg, setInfoMsg] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('payment') === 'pending'
-      ? 'Payment submitted successfully! You will be able to log in as soon as the admin approves your payment.'
-      : '';
+    if (params.get('payment') === 'pending') {
+      return 'Payment submitted successfully! You will be able to log in as soon as the admin approves your payment.';
+    }
+    if (params.get('reset') === 'success') {
+      return 'Password updated. Please sign in with your new password.';
+    }
+    if (params.get('expired') === '1') {
+      return 'Your session ended. Please sign in again.';
+    }
+    return '';
   });
   const navigate = useNavigate();
 
@@ -31,7 +38,7 @@ const Login = () => {
       data = await login(email, password);
 
       if (data.success) {
-        localStorage.setItem('token', data.token);
+        setSession(data);
         localStorage.setItem('user', JSON.stringify(data.user));
         if (data.user.language) setLang(data.user.language);
         if (data.user.role === 'admin') {
@@ -129,6 +136,10 @@ const Login = () => {
             {loading ? t('Logging in...') : t('Log In')}
           </button>
         </form>
+
+        <div style={styles.footerLink}>
+          <Link to="/forgot-password" style={styles.link}>{t('Forgot password?')}</Link>
+        </div>
 
         <div style={styles.footerLink}>
           {t("Don't have an account?")}{' '}

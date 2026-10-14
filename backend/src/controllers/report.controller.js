@@ -4,6 +4,7 @@ import Alert from '../models/alert.model.js';
 import ProjectAssignment from '../models/projectAssignment.model.js';
 import { parsePagination, paginationMeta } from '../utils/pagination.js';
 import { toObjectId } from '../middleware/sanitize.middleware.js';
+import serverError from '../utils/serverError.js';
 
 // @desc    Add daily report log (and run simulated AI evaluation)
 // @route   POST /api/v1/reports
@@ -112,7 +113,7 @@ export const createReport = async (req, res) => {
     res.status(201).json({ success: true, report });
   } catch (error) {
     console.error('Create report error:', error);
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -160,7 +161,7 @@ export const getReports = async (req, res) => {
 
     res.json({ success: true, reports, pagination: paginationMeta(page, limit, total) });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -186,6 +187,6 @@ export const deleteReport = async (req, res) => {
     await report.deleteOne();
     res.json({ success: true, message: 'Daily report removed successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };

@@ -35,7 +35,10 @@ const shortDate = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '-');
 const dateTime = (d) => (d ? `${shortDate(d)} ${new Date(d).toISOString().slice(11, 16)}` : '-');
 const boolText = (v) => (v ? 'yes' : 'no');
 
-const text = (v, notes) => toLatin(v, notes);
+// toLatin only annotates; pdfkit's base Helvetica cannot draw Urdu/Arabic glyphs,
+// so exported PDFs must also strip them (the Excel export keeps the original text).
+const stripNonLatin = (value) => String(value ?? '').replace(/[^\x20-\x7E]/g, '').trim();
+const text = (v, notes) => stripNonLatin(toLatin(v, notes)) || '-';
 
 function truncate(str, max) {
   return str.length > max ? `${str.slice(0, max - 1)}...` : str;

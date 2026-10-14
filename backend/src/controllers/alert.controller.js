@@ -1,6 +1,7 @@
 import Alert from '../models/alert.model.js';
 import Project from '../models/project.model.js';
 import { toObjectId } from '../middleware/sanitize.middleware.js';
+import serverError from '../utils/serverError.js';
 
 // @desc    Get alerts list (scoped to project, company, or global admin)
 // @route   GET /api/v1/alerts
@@ -42,7 +43,7 @@ export const getAlerts = async (req, res) => {
 
     res.json({ success: true, alerts });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -71,6 +72,6 @@ export const markAlertRead = async (req, res) => {
 
     res.json({ success: true, alert });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };

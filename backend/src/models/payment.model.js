@@ -63,5 +63,8 @@ const paymentSchema = new mongoose.Schema(
   }
 );
 
+paymentSchema.index({ projectId: 1, paymentDate: -1 });
+paymentSchema.index({ companyId: 1, projectId: 1, contractorId: 1 });
+
 const Payment = mongoose.model('Payment', paymentSchema);
 export default Payment;

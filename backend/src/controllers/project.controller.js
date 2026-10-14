@@ -8,6 +8,7 @@ import ProjectAssignment from '../models/projectAssignment.model.js';
 import Contract from '../models/contract.model.js';
 import Payment from '../models/payment.model.js';
 import { pick } from '../utils/pick.js';
+import serverError from '../utils/serverError.js';
 
 // @desc    Create a new project
 // @route   POST /api/v1/projects
@@ -33,7 +34,7 @@ export const createProject = async (req, res) => {
 
     res.status(201).json({ success: true, project });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -68,7 +69,7 @@ export const getProjects = async (req, res) => {
     const projects = await Project.find({ companyId: req.user.companyId }).sort({ createdAt: -1 });
     res.json({ success: true, projects });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -108,7 +109,7 @@ export const getProjectById = async (req, res) => {
 
     res.json({ success: true, project });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -140,7 +141,7 @@ export const updateProject = async (req, res) => {
 
     res.json({ success: true, project: updated });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -165,7 +166,7 @@ export const deleteProject = async (req, res) => {
 
     res.json({ success: true, message: 'Project removed successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -287,6 +288,6 @@ export const getProjectDashboard = async (req, res) => {
     });
   } catch (error) {
     console.error('Project dashboard fetch error:', error);
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };

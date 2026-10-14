@@ -13,6 +13,7 @@ import {
 import { validateBankInfo } from '../config/pakBanks.js';
 import { getGatewayAvailability, initiateCheckout } from '../services/paymentGateway.service.js';
 import { activatePlanForPayment } from '../services/subscriptionActivation.service.js';
+import serverError from '../utils/serverError.js';
 
 // @desc    Get plan prices (PKR) and payment gateway instructions
 // @route   GET /api/v1/subscription/plans
@@ -27,7 +28,7 @@ export const getPlans = async (req, res) => {
     }));
     res.json({ success: true, plans, trialLimits: PLAN_LIMITS.trial, gateway: getGatewayConfig() });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -158,7 +159,7 @@ export const submitSubscriptionPayment = async (req, res) => {
     });
   } catch (error) {
     console.error('Subscription payment submission error:', error);
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -176,7 +177,7 @@ export const getMyPayments = async (req, res) => {
       .limit(10);
     res.json({ success: true, payments });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -195,7 +196,7 @@ export const listAllPayments = async (req, res) => {
       .sort({ createdAt: -1 });
     res.json({ success: true, payments });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -224,7 +225,7 @@ export const approveSubscriptionPayment = async (req, res) => {
     });
   } catch (error) {
     console.error('Payment approval error:', error);
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -258,7 +259,7 @@ export const rejectSubscriptionPayment = async (req, res) => {
     });
   } catch (error) {
     console.error('Payment rejection error:', error);
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -321,7 +322,7 @@ export const getSubscriptionStatus = async (req, res) => {
     });
   } catch (error) {
     console.error('Subscription status check error:', error);
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -377,6 +378,6 @@ export const renewSubscription = async (req, res) => {
     });
   } catch (error) {
     console.error('Subscription renewal error:', error);
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };

@@ -10,6 +10,7 @@ import {
   rejectSubscriptionPayment,
 } from '../controllers/subscription.controller.js';
 import { protect, verifyAdmin } from '../middleware/auth.middleware.js';
+import { subscriptionInvoice } from '../controllers/invoice.controller.js';
 
 const router = express.Router();
 
@@ -25,6 +26,7 @@ router.post('/renew', verifyAdmin, renewSubscription);
 router.get('/plans', getPlans);
 router.get('/status', getSubscriptionStatus);
 router.get('/payments', getMyPayments);
+router.get('/invoice/:paymentId', subscriptionInvoice);
 router.post('/payment', submitSubscriptionPayment);
 
 export default router;

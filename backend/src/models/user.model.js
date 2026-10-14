@@ -40,6 +40,24 @@ const userSchema = new mongoose.Schema(
       enum: LANGUAGE_CODES,
       default: DEFAULT_LANGUAGE,
     },
+    // Bumped on password change so every already-issued access token stops working.
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
+    // sha256 of the single-use password reset token, plus its 30-minute window.
+    resetTokenHash: {
+      type: String,
+      default: null,
+    },
+    resetTokenExpiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -60,6 +78,8 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+userSchema.index({ companyId: 1, role: 1 });
 
 const User = mongoose.model('User', userSchema);
 export default User;

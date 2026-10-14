@@ -6,6 +6,7 @@ import ProjectAssignment from '../models/projectAssignment.model.js';
 import { pick } from '../utils/pick.js';
 import { parsePagination, paginationMeta } from '../utils/pagination.js';
 import { toObjectId, toSafeEnum } from '../middleware/sanitize.middleware.js';
+import serverError from '../utils/serverError.js';
 
 const EXPENSE_CATEGORIES = ['material', 'labor', 'machinery', 'transport', 'subcontractor', 'utilities', 'permits', 'safety', 'misc'];
 const EXPENSE_STATUSES = ['pending', 'approved', 'rejected'];
@@ -128,7 +129,7 @@ export const addExpense = async (req, res) => {
     });
   } catch (error) {
     console.error('Add expense error:', error);
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -185,7 +186,7 @@ export const getExpenses = async (req, res) => {
 
     res.json({ success: true, expenses, pagination: paginationMeta(page, limit, total) });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -237,7 +238,7 @@ export const reviewExpense = async (req, res) => {
     });
   } catch (error) {
     console.error('Review expense error:', error);
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -279,7 +280,7 @@ export const updateExpense = async (req, res) => {
 
     res.json({ success: true, expense: updated });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };
 
@@ -315,6 +316,6 @@ export const deleteExpense = async (req, res) => {
 
     res.json({ success: true, message: 'Expense removed successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    serverError(res, error, req);
   }
 };

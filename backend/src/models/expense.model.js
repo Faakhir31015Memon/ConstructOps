@@ -79,5 +79,8 @@ const expenseSchema = new mongoose.Schema(
 // Compound index for querying project expenses with statuses
 expenseSchema.index({ projectId: 1, status: 1 });
 
+expenseSchema.index({ projectId: 1, date: -1 });
+expenseSchema.index({ companyId: 1, date: -1 });
+
 const Expense = mongoose.model('Expense', expenseSchema);
 export default Expense;

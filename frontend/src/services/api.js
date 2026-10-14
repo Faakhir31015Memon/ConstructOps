@@ -8,10 +8,35 @@ const API = axios.create({
   baseURL: BASE_URL,
 });
 
+const TOKEN_KEY = 'token';
+const REFRESH_KEY = 'constructops_refresh_token';
+
+export const getSessionToken = () => localStorage.getItem(TOKEN_KEY);
+export const getRefreshToken = () => localStorage.getItem(REFRESH_KEY);
+
+export const setSession = ({ token, refreshToken }) => {
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  // Admin logins have no refresh token — the old one must not survive.
+  if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken);
+  else localStorage.removeItem(REFRESH_KEY);
+};
+
+export const clearSession = () => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_KEY);
+  localStorage.removeItem('user');
+};
+
+const redirectToLogin = () => {
+  if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+    window.location.href = '/login?expired=1';
+  }
+};
+
 // Interceptor to inject Token into Authorization headers
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = getSessionToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,17 +47,58 @@ API.interceptors.request.use(
   }
 );
 
-// Interceptor to handle session expirations
+// Access tokens are short-lived, so a 401 with an expired token triggers one
+// silent refresh and a retry of the original request. Concurrent requests share
+// a single refresh call, and a rotation failure ends the session.
+let refreshInFlight = null;
+
+const refreshSession = async () => {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+  if (!refreshInFlight) {
+    refreshInFlight = axios
+      .post(`${BASE_URL}/auth/refresh`, { refreshToken })
+      .then(({ data }) => {
+        setSession(data);
+        if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
+        return data.token;
+      })
+      .catch(() => {
+        clearSession();
+        return null;
+      })
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
+};
+
 API.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      // If we are not already on login/register page, redirect
-      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
-        window.location.href = '/login';
+  async (error) => {
+    const { response, config } = error;
+    if (!response || !config) return Promise.reject(error);
+
+    const code = response.data?.code;
+    const isAuthEndpoint = (config.url || '').includes('/auth/');
+
+    if (response.status === 401 && !isAuthEndpoint && !config._retried &&
+        (code === 'TOKEN_EXPIRED' || code === 'TOKEN_REVOKED' || code === 'NO_TOKEN')) {
+      config._retried = true;
+      const newToken = await refreshSession();
+      if (newToken) {
+        config.headers = config.headers || {};
+        config.headers.Authorization = `Bearer ${newToken}`;
+        return API(config);
       }
+      redirectToLogin();
+      return Promise.reject(error);
+    }
+
+    if (response.status === 401 && !isAuthEndpoint) {
+      clearSession();
+      redirectToLogin();
     }
     return Promise.reject(error);
   }
@@ -56,6 +122,29 @@ export const getMe = async () => {
 
 export const saveLanguage = async (language) => {
   const { data } = await API.patch('/auth/language', { language });
+  return data;
+};
+
+export const requestPasswordReset = async (email) => {
+  const { data } = await API.post('/auth/forgot-password', { email });
+  return data;
+};
+
+export const resetPassword = async (token, password) => {
+  const { data } = await API.post('/auth/reset-password', { token, password });
+  return data;
+};
+
+export const changePassword = async (currentPassword, newPassword) => {
+  const { data } = await API.patch('/auth/password', { currentPassword, newPassword });
+  return data;
+};
+
+export const logoutRequest = async ({ allDevices = false } = {}) => {
+  const { data } = await API.post('/auth/logout', {
+    refreshToken: getRefreshToken(),
+    allDevices,
+  });
   return data;
 };
 
@@ -180,6 +269,17 @@ export const checkInAttendance = async (attendanceData) => {
 
 export const getAttendance = async (projectId, date) => {
   const { data } = await API.get(`/workers/attendance?projectId=${projectId}&date=${date}`);
+  return data;
+};
+
+// Send a batch of offline-captured attendance rows; the API upserts idempotently.
+export const bulkCheckInAttendance = async (projectId, records) => {
+  const { data } = await API.post('/workers/attendance/bulk', { projectId, records });
+  return data;
+};
+
+export const getPayroll = async (projectId, month) => {
+  const { data } = await API.get(`/workers/payroll?projectId=${projectId}&month=${encodeURIComponent(month || '')}`);
   return data;
 };
 
@@ -324,6 +424,59 @@ export const recordProjectPayment = async (paymentData) => {
   const { data } = await API.post('/contractors/payments', paymentData);
   return data;
 };
+
+// --- AUDIT TRAIL API METHODS ---
+export const getAuditEvents = async (filters = {}) => {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.append(key, String(value));
+  });
+  const query = params.toString();
+  const { data } = await API.get(`/audit${query ? `?${query}` : ''}`);
+  return data;
+};
+
+// --- NOTIFICATION / WHATSAPP DIGEST API METHODS ---
+export const getDigestSettings = async () => {
+  const { data } = await API.get('/notifications/settings');
+  return data;
+};
+
+export const saveDigestSettings = async (projectId, dailyDigest, whatsappNumbers) => {
+  const { data } = await API.put('/notifications/settings', { projectId, dailyDigest, whatsappNumbers });
+  return data;
+};
+
+export const triggerDigest = async (projectId, send) => {
+  const { data } = await API.post('/notifications/digest', { projectId, send });
+  return data;
+};
+
+// --- ACTIVATION METRICS API METHODS ---
+export const getCompanyActivation = async () => {
+  const { data } = await API.get('/metrics/activation');
+  return data;
+};
+
+export const getAdminFunnel = async (days = 30) => {
+  const { data } = await API.get(`/metrics/funnel?days=${days}`);
+  return data;
+};
+
+// --- INVOICE / DOCUMENT DOWNLOADS ---
+export const downloadInvoice = async (url) => {
+  const response = await API.get(url, { responseType: 'blob' });
+  const disposition = response.headers['content-disposition'] || '';
+  const utf8Name = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  const plainName = disposition.match(/filename="([^"]+)"/i);
+  const filename = decodeURIComponent(utf8Name?.[1] || plainName?.[1] || 'constructops-invoice.pdf');
+  return { blob: response.data, filename };
+};
+
+export const getSubscriptionInvoice = (paymentId) => downloadInvoice(`/subscription/invoice/${paymentId}`);
+export const getContractorPaymentInvoice = (paymentId) => downloadInvoice(`/contractors/invoice/${paymentId}`);
+export const getPayrollInvoiceUrl = (projectId, month) =>
+  `/workers/payroll/invoice?projectId=${projectId}&month=${encodeURIComponent(month || '')}`;
 
 // --- EXPORT REPORT API METHODS ---
 const requestExport = async (url) => {

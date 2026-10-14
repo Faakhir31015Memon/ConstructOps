@@ -1,0 +1,27 @@
+{
+  "name": "ConstructOps — Site Management",
+  "short_name": "ConstructOps",
+  "description": "Track labour, materials, expenses and daily site reports from your phone — even when the network drops.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1E1E1E",
+  "theme_color": "#FF6B00",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

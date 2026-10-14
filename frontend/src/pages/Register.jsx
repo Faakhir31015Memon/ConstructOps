@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { register } from '../services/api';
+import { register, setSession } from '../services/api';
 import { User, Lock, Mail, Building2, AlertCircle } from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
 
@@ -22,7 +22,7 @@ const Register = () => {
     try {
       const data = await register(name, email, password, companyName, lang);
       if (data.success) {
-        localStorage.setItem('token', data.token);
+        setSession(data);
         localStorage.setItem('user', JSON.stringify(data.user));
         navigate('/projects');
       } else {

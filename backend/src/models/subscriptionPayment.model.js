@@ -76,5 +76,8 @@ const subscriptionPaymentSchema = new mongoose.Schema(
   }
 );
 
+subscriptionPaymentSchema.index({ companyId: 1, createdAt: -1 });
+subscriptionPaymentSchema.index({ status: 1, createdAt: -1 });
+
 const SubscriptionPayment = mongoose.model('SubscriptionPayment', subscriptionPaymentSchema);
 export default SubscriptionPayment;

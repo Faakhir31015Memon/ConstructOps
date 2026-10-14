@@ -44,5 +44,7 @@ const projectAssignmentSchema = new mongoose.Schema(
 // Compound index to guarantee one assignment record per project & contractor
 projectAssignmentSchema.index({ projectId: 1, contractorId: 1 }, { unique: true });
 
+projectAssignmentSchema.index({ contractorId: 1, status: 1 });
+
 const ProjectAssignment = mongoose.model('ProjectAssignment', projectAssignmentSchema);
 export default ProjectAssignment;

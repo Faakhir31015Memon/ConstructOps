@@ -4,9 +4,12 @@ import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import mongoose from 'mongoose';
 import connectDB from './config/db.js';
 import sanitizeReq from './middleware/sanitize.middleware.js';
+import { auditTrail } from './middleware/audit.middleware.js';
 import { UPLOAD_DIR } from './routes/upload.routes.js';
+import { logger } from './utils/logger.js';
 
 // Import Route Handlers
 import authRoutes from './routes/auth.routes.js';
@@ -24,6 +27,9 @@ import subscriptionRoutes from './routes/subscription.routes.js';
 import billingRoutes from './routes/billing.routes.js';
 import assistantRoutes from './routes/assistant.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
+import auditRoutes from './routes/audit.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
+import metricsRoutes from './routes/metrics.routes.js';
 
 const app = express();
 
@@ -67,15 +73,38 @@ app.use(sanitizeReq);
 app.use(express.json({ limit: '10mb', verify: (req, res, buf) => { req.rawBody = buf.toString('utf8'); } }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-if (process.env.NODE_ENV !== 'production') {
+if (isDev) {
   app.use(morgan('dev'));
+} else {
+  app.use(morgan('combined', { stream: logger.stream }));
 }
 
-// Base Route
-app.get('/api/v1/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'ConstructOps API is online',
+// Base Route — includes a real DB round-trip so the health check proves the
+// service can actually serve traffic, not just that the process is up.
+app.get('/api/v1/health', async (req, res) => {
+  const dbState = mongoose.connection.readyState; // 1 = connected
+  let database = { status: dbState === 1 ? 'up' : 'down', readyState: dbState };
+  let statusCode = 200;
+
+  if (dbState === 1) {
+    const started = Date.now();
+    try {
+      await mongoose.connection.db.admin().ping();
+      database = { status: 'up', latencyMs: Date.now() - started, name: mongoose.connection.name };
+    } catch (error) {
+      database = { status: 'down', error: 'ping failed' };
+      logger.error('Health check DB ping failed', { error: error.message });
+      statusCode = 503;
+    }
+  } else {
+    statusCode = 503;
+  }
+
+  res.status(statusCode).json({
+    success: statusCode === 200,
+    message: statusCode === 200 ? 'ConstructOps API is online' : 'ConstructOps API is degraded',
+    database,
+    uptimeSeconds: Math.round(process.uptime()),
     timestamp: new Date(),
   });
 });
@@ -94,6 +123,9 @@ app.use(async (req, res, next) => {
   }
 });
 
+// Records every successful create/update/delete for the owner-facing audit trail.
+app.use(auditTrail());
+
 // Bind API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/projects', projectRoutes);
@@ -110,6 +142,9 @@ app.use('/api/v1/subscription', subscriptionRoutes);
 app.use('/api/v1/billing', billingRoutes);
 app.use('/api/v1/assistant', assistantRoutes);
 app.use('/api/v1/uploads', uploadRoutes);
+app.use('/api/v1/audit', auditRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/metrics', metricsRoutes);
 
 // Error Handling Middleware
 app.use((req, res, next) => {
@@ -123,11 +158,17 @@ app.use((err, req, res, next) => {
   if (err.message === 'CORS blocked for this origin') {
     return res.status(403).json({ success: false, message: 'This origin is not allowed to access the API' });
   }
-  // Full error stays in the server log; the browser never receives stack traces.
-  console.error(`${req.method} ${req.originalUrl} ->`, err);
+  // Full detail (stack, query, collection names) stays in the server log only.
+  logger.error(err.message || 'Unhandled error', {
+    stack: err.stack,
+    method: req.method,
+    path: req.originalUrl,
+    statusCode,
+    userId: req.user?._id,
+  });
   res.status(statusCode).json({
     success: false,
-    message: err.message || 'Server error',
+    message: statusCode >= 500 ? 'Something went wrong on our side. Please try again.' : err.message,
   });
 });
 

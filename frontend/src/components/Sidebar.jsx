@@ -20,9 +20,14 @@ const Sidebar = ({ isOpen, onClose }) => {
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    // Revoke the refresh server-side so the token cannot be replayed after sign-out.
+    try {
+      await logoutRequest();
+    } catch {
+      /* even if the call fails, the local session is dropped */
+    }
+    clearSession();
     window.location.href = '/login';
   };
 
@@ -100,8 +105,19 @@ const Sidebar = ({ isOpen, onClose }) => {
           </NavLink>
         )}
 
-        <NavLink 
-          to="/projects" 
+        <NavLink
+          to="/account"
+          style={({ isActive }) => ({
+            ...styles.menuItem,
+            ...(isActive ? styles.activeMenuItem : {})
+          })}
+        >
+          <Settings size={20} />
+          <span>{t('Account & Security')}</span>
+        </NavLink>
+
+        <NavLink
+          to="/projects"
           style={({ isActive }) => ({
             ...styles.menuItem,
             ...(isActive || location.pathname.includes('/projects/') ? styles.activeMenuItem : {})

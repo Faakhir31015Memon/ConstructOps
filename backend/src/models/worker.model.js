@@ -32,5 +32,7 @@ const workerSchema = new mongoose.Schema(
   }
 );
 
+workerSchema.index({ projectId: 1, createdAt: -1 });
+
 const Worker = mongoose.model('Worker', workerSchema);
 export default Worker;

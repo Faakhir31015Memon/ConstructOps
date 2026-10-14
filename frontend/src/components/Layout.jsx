@@ -7,6 +7,7 @@ import SubscriptionModal from './SubscriptionModal';
 import AssistantChat from './AssistantChat';
 import { getSubscriptionStatus } from '../services/api';
 import { useLang } from '../i18n/LanguageContext';
+import { clearSession } from '../services/api';
 
 const Layout = ({ title }) => {
   const navigate = useNavigate();
@@ -104,8 +105,7 @@ const Layout = ({ title }) => {
                 <button
                   type="button"
                   onClick={() => {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
+                    clearSession();
                     window.location.href = '/login?payment=pending';
                   }}
                   style={styles.reactivateMainBtn}

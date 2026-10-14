@@ -62,5 +62,8 @@ const contractSchema = new mongoose.Schema(
   }
 );
 
+contractSchema.index({ projectId: 1, contractorId: 1 });
+contractSchema.index({ companyId: 1, status: 1 });
+
 const Contract = mongoose.model('Contract', contractSchema);
 export default Contract;

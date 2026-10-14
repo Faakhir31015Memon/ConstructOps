@@ -33,5 +33,7 @@ const alertSchema = new mongoose.Schema(
   }
 );
 
+alertSchema.index({ projectId: 1, isRead: 1, createdAt: -1 });
+
 const Alert = mongoose.model('Alert', alertSchema);
 export default Alert;

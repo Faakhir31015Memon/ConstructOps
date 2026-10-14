@@ -7,6 +7,10 @@ import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Dashboard from './pages/Dashboard';
 import Contractors from './pages/Contractors';
+import Account from './pages/Account';
+import AuditTrail from './pages/AuditTrail';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 const getStoredUser = () => {
   try {
@@ -46,6 +50,8 @@ function App() {
         {/* Public auth screens */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Private workspace layouts */}
         <Route element={<Layout title="ConstructOps Dashboard" />}>
@@ -53,6 +59,8 @@ function App() {
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/contractors" element={<RequireRole roles={['admin', 'owner', 'manager']}><Contractors /></RequireRole>} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/audit" element={<RequireRole roles={['admin', 'owner']}><AuditTrail /></RequireRole>} />
         </Route>
 
         {/* Fallback routes */}

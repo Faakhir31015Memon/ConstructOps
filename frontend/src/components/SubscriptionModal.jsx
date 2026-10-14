@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { submitSubscriptionPayment, getSubscriptionPlans, getPakBanks } from '../services/api';
 import { useLang } from '../i18n/LanguageContext';
+import { clearSession } from '../services/api';
 
 // Presentation copy only. Prices, durations and limits come from
 // GET /subscription/plans — the backend is the single source of truth.
@@ -206,8 +207,7 @@ const SubscriptionModal = ({
         <button
           type="button"
           onClick={() => {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            clearSession();
             window.location.href = '/login?payment=pending';
           }}
           style={styles.activateBtn}

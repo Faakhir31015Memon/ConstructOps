@@ -25,9 +25,13 @@ import {
   getProjectContract,
   saveProjectContract,
   getProjectPayments,
-  recordProjectPayment
+  recordProjectPayment,
+  bulkCheckInAttendance
 } from '../services/api';
 import ExportButtons from '../components/ExportButtons';
+import PayrollPanel from '../components/PayrollPanel';
+import DigestPanel from '../components/DigestPanel';
+import { queueAttendance, queueManyAttendance, subscribeToQueue } from '../utils/offlineQueue';
 import { 
   Briefcase, 
   DollarSign, 
@@ -45,7 +49,11 @@ import {
   Package, 
   ArrowDownLeft, 
   ArrowUpRight,
-  Clock 
+  Clock,
+  Wallet,
+  MessageCircle,
+  CloudOff,
+  CheckCheck
 } from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
 
@@ -89,6 +97,8 @@ const ProjectDetail = () => {
   const [paymentMethodInput, setPaymentMethodInput] = useState('bank_transfer');
   const [paymentRefInput, setPaymentRefInput] = useState('');
   const [actionMessage, setActionMessage] = useState('');
+  const [offlinePending, setOfflinePending] = useState(0);
+  const [bulkBusy, setBulkBusy] = useState(false);
   
   // Form input States
   // 1. Worker Form
@@ -138,6 +148,14 @@ const ProjectDetail = () => {
     fetchDashboard();
   }, [id]);
 
+  useEffect(
+    () =>
+      subscribeToQueue((records) =>
+        setOfflinePending(records.filter((r) => String(r.projectId) === String(id)).length)
+      ),
+    [id]
+  );
+
   // Handle Tab changes and lazy loading data
   const handleTabChange = async (tab) => {
     setActiveTab(tab);
@@ -185,7 +203,19 @@ const ProjectDetail = () => {
     }
   };
 
+  const markAttendanceLocal = (workerId, status) => {
+    setAttendance((prev) => {
+      const rest = prev.filter((a) => (a.workerId?._id || a.workerId) !== workerId);
+      return [...rest, { workerId: { _id: workerId }, status, date: selectedDate }];
+    });
+  };
+
   const handleAttendanceChange = async (workerId, status) => {
+    if (!navigator.onLine) {
+      queueAttendance({ projectId: id, workerId, date: selectedDate, status });
+      markAttendanceLocal(workerId, status);
+      return;
+    }
     try {
       const res = await checkInAttendance({
         workerId,
@@ -199,6 +229,40 @@ const ProjectDetail = () => {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Site supervisors mark the whole roster at the gate in one tap, then fix
+  // the exceptions. Absentees are sent explicitly so the row isn't left blank.
+  const handleBulkAttendance = async (status) => {
+    if (workers.length === 0) return;
+    const message =
+      status === 'present'
+        ? `Mark all ${workers.length} workers present for ${selectedDate}?`
+        : `Clear attendance for ${selectedDate}? Everyone will be marked absent.`;
+    if (!window.confirm(message)) return;
+
+    setBulkBusy(true);
+    const records = workers.map((w) => ({ workerId: w._id, date: selectedDate, status }));
+    try {
+      if (navigator.onLine) {
+        const res = await bulkCheckInAttendance(id, records);
+        if (res.success) {
+          setActionMessage(
+            `Attendance saved — ${res.summary?.created || 0} new, ${res.summary?.updated || 0} updated.`
+          );
+        }
+        fetchAttendanceForDate(selectedDate);
+        fetchDashboard();
+      } else {
+        queueManyAttendance(records.map((r) => ({ ...r, projectId: id })));
+        workers.forEach((w) => markAttendanceLocal(w._id, status));
+        setActionMessage('No signal — saved on this device and will sync automatically.');
+      }
+    } catch (err) {
+      setActionMessage(err.response?.data?.message || 'Attendance could not be saved.');
+    } finally {
+      setBulkBusy(false);
     }
   };
 

@@ -37,5 +37,7 @@ const attendanceSchema = new mongoose.Schema(
 // Compound index to ensure a worker has only one attendance record per day per project
 attendanceSchema.index({ workerId: 1, date: 1 }, { unique: true });
 
+attendanceSchema.index({ projectId: 1, date: 1 });
+
 const Attendance = mongoose.model('Attendance', attendanceSchema);
 export default Attendance;
