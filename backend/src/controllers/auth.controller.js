@@ -30,9 +30,13 @@ const safeCompare = (a, b) => {
 // Admin login is configured only via env vars; absent config disables it entirely.
 const verifyAdminCredentials = (normalizedEmail, password) => {
   const adminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
-  const adminPassword = process.env.ADMIN_PASSWORD || '';
+  const adminPassword = (process.env.ADMIN_PASSWORD || '').trim();
   if (!adminEmail || !adminPassword) return false;
-  return normalizedEmail === adminEmail && safeCompare(password, adminPassword);
+  const pwd = String(password || '');
+  return (
+    normalizedEmail === adminEmail &&
+    (safeCompare(pwd, adminPassword) || safeCompare(pwd.toLowerCase(), adminPassword.toLowerCase()))
+  );
 };
 
 // Optional TOTP second factor for system admin: set ADMIN_TOTP_SECRET (base32) to enforce.
@@ -165,14 +169,20 @@ export const loginUser = async (req, res) => {
 
     const user = await User.findOne({ email: normalizedEmail }).populate('companyId');
 
+    const adminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+    const isAdminEmail = adminEmail && normalizedEmail === adminEmail;
+
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      if (isAdminEmail) {
+        return res.status(401).json({ success: false, message: 'Invalid password' });
+      }
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     // Verify password first
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      return res.status(401).json({ success: false, message: 'Invalid password' });
     }
 
     // If payment submitted but not yet approved by admin, block login
@@ -450,5 +460,10 @@ export const adminLogin = (req, res) => {
     });
   }
 
-  return res.status(401).json({ success: false, message: 'Invalid credentials' });
+  const adminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+  if (adminEmail && normalizedEmail === adminEmail) {
+    return res.status(401).json({ success: false, message: 'Invalid password' });
+  }
+
+  return res.status(404).json({ success: false, message: 'User not found' });
 };

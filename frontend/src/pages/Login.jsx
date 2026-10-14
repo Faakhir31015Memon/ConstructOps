@@ -60,7 +60,16 @@ const Login = () => {
         return;
       }
       console.error(err);
-      setError(t(err.response?.data?.message || 'Server error. Please try again.'));
+      const serverMsg = err.response?.data?.message;
+      if (serverMsg) {
+        setError(t(serverMsg));
+      } else if (err.response?.status === 404) {
+        setError(t('User not found'));
+      } else if (err.response?.status === 401) {
+        setError(t('Invalid password'));
+      } else {
+        setError(t('Server error. Please try again.'));
+      }
     } finally {
       setLoading(false);
     }

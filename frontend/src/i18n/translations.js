@@ -53,6 +53,9 @@ const latnUr = {
   'Contractors': 'Contractors',
   'Assign to Project': 'Project Par Lazmi Karein',
   'Revoke access': 'Access Khatam Karein',
+  'User not found': 'User nahi mila',
+  'Invalid password': 'Ghalat password',
+  'Invalid email or password': 'Ghalat email ya password',
 };
 
 // Urdu script — full coverage of primary UI surfaces
@@ -228,6 +231,9 @@ const arabUr = {
   'Material': 'مال',
   'Contractor': 'ٹھیکیدار',
   'Amount (PKR)': 'رقم (روپے)',
+  'User not found': 'صارف نہیں ملا',
+  'Invalid password': 'غلط پاس ورڈ',
+  'Invalid email or password': 'غلط ای میل یا پاس ورڈ',
 };
 
 export const translate = (code, key, vars) => {
